@@ -1,6 +1,7 @@
 amcl:
   ros__parameters:
     use_sim_time: True
+    tf_broadcast: True
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.2
@@ -29,7 +30,6 @@ amcl:
     robot_model_type: "omnidirectional"
     save_pose_rate: 0.5
     sigma_hit: 0.2
-    tf_broadcast: true
     transform_tolerance: 1.0
     update_min_a: 0.2
     update_min_d: 0.25
