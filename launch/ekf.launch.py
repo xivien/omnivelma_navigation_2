@@ -27,11 +27,12 @@ def generate_launch_description():
             output='screen',
             parameters=[ekf_odom_params],
         ),
-        # launch_ros.actions.Node(
-        #     package='robot_localization',
-        #     executable='ekf_node',
-        #     name='ekf_map_node',
-        #     output='screen',
-        #     parameters=[ekf_map_params],
-        # ),
+        launch_ros.actions.Node(
+            package='robot_localization',
+            executable='ekf_node',
+            name='ekf_map_node',
+            output='screen',
+            parameters=[ekf_map_params],
+            remappings=[('/odometry/filtered','amcl/filtered')],
+        ),
     ])
