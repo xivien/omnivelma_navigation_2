@@ -16,7 +16,7 @@ class MinimalPublisher : public rclcpp::Node
 {
 public:
     MinimalPublisher()
-        : Node("minimal_publisher"), min_ang_(-3.14), max_ang_(3.14), range_min_(0.45), range_max_(25.0), frame_id_("base_laser")
+        : Node("minimal_publisher"), min_ang_(-3.1), max_ang_(3.1), range_min_(0.45), range_max_(25.0), frame_id_("base_laser")
     {
         tfListener = new tf2_ros::TransformListener(tf2_buffer);
 
@@ -87,16 +87,16 @@ private:
 
             if (range_sq < range_min_sq_)
             {
-                RCLCPP_INFO(this->get_logger(), "rejected for range %f below minimum value %f. Point: (%f, %f, %f)", range_sq, range_min_sq_, x, y, z);
+                RCLCPP_DEBUG(this->get_logger(), "rejected for range %f below minimum value %f. Point: (%f, %f, %f)", range_sq, range_min_sq_, x, y, z);
                 continue;
             }
 
             double angle = atan2(y, x);
-            // if (angle < min_ang_ || angle > max_ang_)
-            // {
-            //     RCLCPP_INFO(this->get_logger(), "rejected for angle not in range.");
-            //     continue;
-            // }
+            if (angle < min_ang_ || angle > max_ang_)
+            {
+                // RCLCPP_INFO(this->get_logger(), "rejected for angle %lf not in range.", angle);
+                continue;
+            }
             int index = (angle - min_ang_) / scan_msg.angle_increment;
 
             if (scan_msg.ranges[index] * scan_msg.ranges[index] > range_sq)
@@ -121,7 +121,7 @@ private:
     tf2::BufferCore tf2_buffer;
     tf2_ros::TransformListener *tfListener;
     laser_geometry::LaserProjection projector_;
-    sensor_msgs::msg::LaserScan data_1; //sharedPtr
+    sensor_msgs::msg::LaserScan data_1;
     sensor_msgs::msg::LaserScan data_2;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_1_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_2_;

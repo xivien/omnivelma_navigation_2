@@ -28,12 +28,23 @@ def generate_launch_description():
                     'omnivelma_navigation_2'), 'launch/ekf.launch.py')
             ),
         ),
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(
+                os.path.join(get_package_share_directory(
+                    'omnivelma_navigation_2'), 'launch/laser_tf_broadcaster.launch.py')
+            ),
+        ),
         Node(
             package='rviz2',
-            node_executable='rviz2',
-            node_name='rviz2',
+            executable='rviz2',
+            name='rviz2',
             arguments=['-d', rviz_config_dir],
             output='screen'),
+        # Node(
+        #     package='omnivelma_navigation_2',
+        #     executable='laserscan_multi_merger',
+        #     name='laserscan_multi_merger',
+        #     output='screen'),
     ])
     return ld
 
