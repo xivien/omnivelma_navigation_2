@@ -1,12 +1,12 @@
 amcl:
   ros__parameters:
     use_sim_time: True
-    tf_broadcast: False
-    alpha1: 0.2
-    alpha2: 0.2
-    alpha3: 0.2
-    alpha4: 0.2
-    alpha5: 0.2
+    tf_broadcast: false
+    alpha1: 0.005
+    alpha2: 0.005
+    alpha3: 0.01
+    alpha4: 0.005
+    alpha5: 0.003
     base_frame_id: "base_footprint"
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
@@ -30,7 +30,7 @@ amcl:
     robot_model_type: "omnidirectional"
     save_pose_rate: 0.5
     sigma_hit: 0.2
-    transform_tolerance: 1.0
+    transform_tolerance: 0.1
     update_min_a: 0.2
     update_min_d: 0.25
     z_hit: 0.5
@@ -38,6 +38,7 @@ amcl:
     z_rand: 0.5
     z_short: 0.05
     set_initial_pose: true
+    scan_topic: /scan
 
 amcl_map_client:
   ros__parameters:

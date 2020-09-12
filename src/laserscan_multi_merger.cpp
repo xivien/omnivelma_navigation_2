@@ -9,24 +9,25 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include <tf2_ros/transform_listener.h>
-
 using namespace std::chrono_literals;
 
-class MinimalPublisher : public rclcpp::Node
+class MergedLaserPublisher : public rclcpp::Node
 {
 public:
-    MinimalPublisher()
+    MergedLaserPublisher()
         : Node("minimal_publisher"), min_ang_(-3.1), max_ang_(3.1), range_min_(0.45), range_max_(25.0), frame_id_("base_laser")
     {
+        rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
+        set_parameter(simTime);
         tfListener = new tf2_ros::TransformListener(tf2_buffer);
 
-        publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
+        publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
         timer_ = this->create_wall_timer(
-            20ms, std::bind(&MinimalPublisher::timer_callback, this));
+            20ms, std::bind(&MergedLaserPublisher::timer_callback, this));
         subscription_1_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/monokl_l/scan", 10, std::bind(&MinimalPublisher::topic_1_callback, this, std::placeholders::_1));
+            "/monokl_l/scan", 1, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
         subscription_2_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/monokl_r/scan", 10, std::bind(&MinimalPublisher::topic_2_callback, this, std::placeholders::_1));
+            "/monokl_r/scan", 1, std::bind(&MergedLaserPublisher::topic_2_callback, this, std::placeholders::_1));
     }
 
 private:
@@ -34,12 +35,12 @@ private:
     {
         if (!tf2_buffer._frameExists("base_laser"))
         {
-            RCLCPP_INFO(this->get_logger(), "base_footprint doesn't exist");
+            RCLCPP_INFO(this->get_logger(), "base_laser doesn't exist");
             return;
         }
-        if (data_1.header.frame_id == "")
+        if (data_1->header.frame_id == "")
         {
-            RCLCPP_INFO(this->get_logger(), "Empty frame - %s - id ", data_1.header.frame_id.c_str());
+            RCLCPP_INFO(this->get_logger(), "Empty frame - %s - id ", data_1->header.frame_id.c_str());
             return;
         }
 
@@ -47,29 +48,29 @@ private:
         sensor_msgs::msg::PointCloud2 tmpCloud1, tmpCloud2, merged_cloud;
 
         projector_.transformLaserScanToPointCloud(
-            frame_id_, data_1, tmpCloud1, tf2_buffer, -1.0,
+            frame_id_, *data_1, tmpCloud1, tf2_buffer, -1.0,
             laser_geometry::channel_option::Distance);
 
         projector_.transformLaserScanToPointCloud(
-            frame_id_, data_2, tmpCloud2, tf2_buffer, -1.0,
+            frame_id_, *data_2, tmpCloud2, tf2_buffer, -1.0,
             laser_geometry::channel_option::Distance);
         // concatenate clouds
         pcl::concatenatePointCloud(tmpCloud1, tmpCloud2, merged_cloud);
 
         // build laserscan output
-        auto scan_msg = sensor_msgs::msg::LaserScan();
+        sensor_msgs::msg::LaserScan::SharedPtr scan_msg(new sensor_msgs::msg::LaserScan());
+        scan_msg->header = merged_cloud.header;
+        scan_msg->header.stamp = now();
+        scan_msg->header.frame_id = frame_id_.c_str();
+        scan_msg->angle_min = min_ang_;
+        scan_msg->angle_max = max_ang_;
+        scan_msg->angle_increment = 0.0058;
+        scan_msg->scan_time = 0.0333333;
+        scan_msg->range_min = range_min_;
+        scan_msg->range_max = range_max_;
 
-        scan_msg.header = data_1.header;
-        scan_msg.header.frame_id = frame_id_;
-        scan_msg.angle_min = min_ang_;
-        scan_msg.angle_max = max_ang_;
-        scan_msg.angle_increment = 0.0058;
-        scan_msg.scan_time = 0.0333333;
-        scan_msg.range_min = range_min_;
-        scan_msg.range_max = range_max_;
-
-        uint32_t ranges_size = std::ceil((max_ang_ - min_ang_) / scan_msg.angle_increment) + 1; // TODO Fixed SLAM
-        scan_msg.ranges.assign(ranges_size, range_max_ + 1.0);
+        uint32_t ranges_size = std::ceil((max_ang_ - min_ang_) / scan_msg->angle_increment) + 1; // TODO Fixed SLAM
+        scan_msg->ranges.assign(ranges_size, range_max_ + 1.0);
 
         const double range_min_sq_ = range_min_ * range_min_;
         for (sensor_msgs::PointCloud2ConstIterator<float> it(merged_cloud, "x"); it != it.end(); ++it)
@@ -97,22 +98,22 @@ private:
                 // RCLCPP_INFO(this->get_logger(), "rejected for angle %lf not in range.", angle);
                 continue;
             }
-            int index = (angle - min_ang_) / scan_msg.angle_increment;
+            int index = (angle - min_ang_) / scan_msg->angle_increment;
 
-            if (scan_msg.ranges[index] * scan_msg.ranges[index] > range_sq)
-                scan_msg.ranges[index] = sqrt(range_sq);
+            if (scan_msg->ranges[index] * scan_msg->ranges[index] > range_sq)
+                scan_msg->ranges[index] = sqrt(range_sq);
         }
 
-        publisher_->publish(scan_msg);
+        publisher_->publish(*scan_msg);
     }
 
     void topic_1_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
-        data_1 = *msg;
+        data_1 = msg;
     }
     void topic_2_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
-        data_2 = *msg;
+        data_2 = msg;
     }
 
     float min_ang_, max_ang_, range_min_, range_max_;
@@ -121,19 +122,18 @@ private:
     tf2::BufferCore tf2_buffer;
     tf2_ros::TransformListener *tfListener;
     laser_geometry::LaserProjection projector_;
-    sensor_msgs::msg::LaserScan data_1;
-    sensor_msgs::msg::LaserScan data_2;
+    sensor_msgs::msg::LaserScan::SharedPtr data_1;
+    sensor_msgs::msg::LaserScan::SharedPtr data_2;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_1_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_2_;
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Clock::SharedPtr clock_;
     rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr publisher_;
 };
 
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<MinimalPublisher>());
+    rclcpp::spin(std::make_shared<MergedLaserPublisher>());
     rclcpp::shutdown();
     return 0;
 }
