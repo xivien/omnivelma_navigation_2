@@ -33,6 +33,11 @@ def generate_launch_description():
             description="Navigation parameters file"
         ),
         launch.actions.DeclareLaunchArgument(
+            name='use_sim_time_slam',
+            default_value='True',
+            description="Navigation parameters file"
+        ),
+        launch.actions.DeclareLaunchArgument(
             name='use_slam',
             default_value='False',
             description="SLAM or localization"
@@ -41,12 +46,13 @@ def generate_launch_description():
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
-                    'nav2_bringup'), 'launch/bringup_launch.py')
+                    'omnivelma_navigation_2'), 'launch/bringup_launch.py')
             ),
             launch_arguments={
                 'map': launch.substitutions.LaunchConfiguration('map'),
                 'params_file': launch.substitutions.LaunchConfiguration('params_file'),
                 'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
+                'use_sim_time_slam': launch.substitutions.LaunchConfiguration('use_sim_time_slam'),
                 'slam': launch.substitutions.LaunchConfiguration('use_slam')
             }.items()
         )

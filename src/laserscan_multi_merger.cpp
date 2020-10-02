@@ -15,24 +15,29 @@ class MergedLaserPublisher : public rclcpp::Node
 {
 public:
     MergedLaserPublisher()
-        : Node("minimal_publisher"), min_ang_(-3.1), max_ang_(3.1), range_min_(0.45), range_max_(25.0), frame_id_("base_laser")
+        : Node("Laser_Scan_Merger"), min_ang_(-3.1), max_ang_(3.1), range_min_(0.45), range_max_(20.0), frame_id_("base_laser")
     {
         rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
         set_parameter(simTime);
         tfListener = new tf2_ros::TransformListener(tf2_buffer);
 
-        publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
+        publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
         timer_ = this->create_wall_timer(
-            20ms, std::bind(&MergedLaserPublisher::timer_callback, this));
+            50ms, std::bind(&MergedLaserPublisher::timer_callback, this));
         subscription_1_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/monokl_l/scan", 1, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
+            "/monokl_l/scan", 10, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
         subscription_2_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/monokl_r/scan", 1, std::bind(&MergedLaserPublisher::topic_2_callback, this, std::placeholders::_1));
+            "/monokl_r/scan", 10, std::bind(&MergedLaserPublisher::topic_2_callback, this, std::placeholders::_1));
     }
 
 private:
     void timer_callback()
     {
+        if(!data_1 || !data_2)
+        {
+            RCLCPP_INFO(this->get_logger(), "Empty laser scan");
+            return;
+        }
         if (!tf2_buffer._frameExists("base_laser"))
         {
             RCLCPP_INFO(this->get_logger(), "base_laser doesn't exist");
@@ -54,6 +59,11 @@ private:
         projector_.transformLaserScanToPointCloud(
             frame_id_, *data_2, tmpCloud2, tf2_buffer, -1.0,
             laser_geometry::channel_option::Distance);
+
+        // reset data pointer
+        data_1.reset();
+        data_2.reset();
+
         // concatenate clouds
         pcl::concatenatePointCloud(tmpCloud1, tmpCloud2, merged_cloud);
 
@@ -75,7 +85,6 @@ private:
         const double range_min_sq_ = range_min_ * range_min_;
         for (sensor_msgs::PointCloud2ConstIterator<float> it(merged_cloud, "x"); it != it.end(); ++it)
         {
-            // TODO: do something with the values of x, y, z
             float x = it[0];
             float y = it[1];
             float z = it[2];

@@ -1,7 +1,7 @@
 ekf_map_node:
     ros__parameters:
         use_sim_time: True
-        frequency: 30.0
+        frequency: 10.0
         two_d_mode: true
         publish_tf: true
 
@@ -10,7 +10,7 @@ ekf_map_node:
         base_link_frame: base_footprint  # Defaults to "base_link" if unspecified
         world_frame: map           # Defaults to the value of odom_frame if unspecified
         # transform_time_offset: 0.1
-        odom0: /odom/noisy
+        odom0: /odom
         odom0_config: [false,  false,  false,  #velocity in Y makes the robot wobble?? - bad TF frames
                        false, false, false,
                        true, true, false,
@@ -43,7 +43,7 @@ ekf_map_node:
 
         # pos1_rejection_threshold: 2.0  # Note the difference in parameter name
 
-        imu0: /imu_cov # no covariance /imu_cov with covariance
+        imu0: /wewucho/imu # no covariance /imu_cov with covariance
         imu0_config: [false, false, false,
                       false, false, false,
                       false, false, false,
@@ -52,7 +52,7 @@ ekf_map_node:
         imu0_nodelay: true
         imu0_differential: false
         imu0_relative: false
-        imu0_queue_size: 20
+        imu0_queue_size: 50
 
         imu0_remove_gravitational_acceleration: true
 
