@@ -21,19 +21,19 @@ public:
         set_parameter(simTime);
         tfListener = new tf2_ros::TransformListener(tf2_buffer);
 
-        publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
+        publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
         timer_ = this->create_wall_timer(
             50ms, std::bind(&MergedLaserPublisher::timer_callback, this));
         subscription_1_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/monokl_l/scan", 10, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
+            "/monokl_l/scan", 1, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
         subscription_2_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/monokl_r/scan", 10, std::bind(&MergedLaserPublisher::topic_2_callback, this, std::placeholders::_1));
+            "/monokl_r/scan", 1, std::bind(&MergedLaserPublisher::topic_2_callback, this, std::placeholders::_1));
     }
 
 private:
     void timer_callback()
     {
-        if(!data_1 || !data_2)
+        if (!data_1 || !data_2)
         {
             RCLCPP_INFO(this->get_logger(), "Empty laser scan");
             return;
