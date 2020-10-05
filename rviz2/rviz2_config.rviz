@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1
         - /TF1/Frames1
         - /Pose1
         - /Path2
@@ -206,6 +207,8 @@ Visualization Manager:
           Value: true
         base_laser:
           Value: false
+        camera_link:
+          Value: false
         camera_link_reoriented:
           Value: false
         map:
@@ -231,7 +234,8 @@ Visualization Manager:
                 base_laser:
                   {}
                 camera_link_reoriented:
-                  {}
+                  camera_link:
+                    {}
                 monokl_l_heart:
                   {}
                 monokl_r_heart:
@@ -464,16 +468,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.327238082885742
+      Distance: 3.9722564220428467
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.024061679840088
-        Y: -1.6858651638031006
-        Z: 0.04636478051543236
+        X: 3.9862864017486572
+        Y: 1.938947319984436
+        Z: 0.045018866658210754
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -498,5 +502,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1440
-  X: 2746
-  Y: 191
+  X: 556
+  Y: 358

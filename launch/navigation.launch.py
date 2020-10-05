@@ -15,6 +15,10 @@ def generate_launch_description():
         get_package_share_directory('omnivelma_navigation_2'),
         'params',
         'nav2_params.yaml')
+    bt_xml_location = os.path.join(
+        get_package_share_directory('omnivelma_navigation_2'),
+        'params',
+        'nav_bt.xml')
 
     ld = launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(
@@ -42,6 +46,11 @@ def generate_launch_description():
             default_value='False',
             description="SLAM or localization"
         ),
+        launch.actions.DeclareLaunchArgument(
+            name='bt_xml',
+            default_value=bt_xml_location,
+            description="Behaviour tree location"
+        ),
         # Run another launch file
         launch.actions.IncludeLaunchDescription(
             launch.launch_description_sources.PythonLaunchDescriptionSource(
@@ -53,7 +62,8 @@ def generate_launch_description():
                 'params_file': launch.substitutions.LaunchConfiguration('params_file'),
                 'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
                 'use_sim_time_slam': launch.substitutions.LaunchConfiguration('use_sim_time_slam'),
-                'slam': launch.substitutions.LaunchConfiguration('use_slam')
+                'slam': launch.substitutions.LaunchConfiguration('use_slam'),
+                'default_bt_xml_filename': launch.substitutions.LaunchConfiguration('bt_xml'),
             }.items()
         )
     ])
