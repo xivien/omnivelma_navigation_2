@@ -79,7 +79,7 @@ private:
         scan_msg->range_min = range_min_;
         scan_msg->range_max = range_max_;
 
-        uint32_t ranges_size = std::ceil((max_ang_ - min_ang_) / scan_msg->angle_increment) + 1; // TODO Fixed SLAM
+        uint32_t ranges_size = std::ceil((max_ang_ - min_ang_) / scan_msg->angle_increment) + 1; // Fixed SLAM
         scan_msg->ranges.assign(ranges_size, range_max_ + 1.0);
 
         const double range_min_sq_ = range_min_ * range_min_;
