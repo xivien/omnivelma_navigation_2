@@ -19,6 +19,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL REQUIRED)
@@ -32,6 +34,8 @@ set(dependencies
 rclcpp
 sensor_msgs
 std_msgs
+std_srvs
+nav2_msgs
 PCL
 pcl_conversions
 tf2
@@ -47,6 +51,8 @@ endif()
 add_executable(laserscan_multi_merger src/laserscan_multi_merger.cpp)
 ament_target_dependencies(laserscan_multi_merger ${dependencies})
 
+add_executable(navigation_helper src/simple_navigation_goals.cpp)
+ament_target_dependencies(navigation_helper ${dependencies})
 # Install launch files.
 install(DIRECTORY
   launch
@@ -57,6 +63,7 @@ install(DIRECTORY
 )
 install(TARGETS
   laserscan_multi_merger
+  navigation_helper
   DESTINATION lib/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies})
