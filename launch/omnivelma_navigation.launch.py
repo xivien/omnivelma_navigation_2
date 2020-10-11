@@ -8,6 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.conditions import IfCondition
 
+
 def generate_launch_description():
 
     rviz_config_dir = os.path.join(
