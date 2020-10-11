@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 #include <cstdlib>
+#include <cinttypes>
+#include <future>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
@@ -10,12 +12,16 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_waypoint_follower/waypoint_follower.hpp"
+#include "nav2_msgs/action/follow_waypoints.hpp"
 
 using namespace std::chrono_literals;
 
 class SimpleNavigationGoals : public rclcpp::Node
 {
 public:
+  using GoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>;
   SimpleNavigationGoals() : Node("simple_navigation_goals"), loop_rate_(10.0f), freq_(10.0f), cov_tol_(0.1)
   {
     rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
@@ -28,6 +34,8 @@ public:
     pub_goal_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 1);
     amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
         "/amcl_pose", 1, std::bind(&SimpleNavigationGoals::pose_callback, this, std::placeholders::_1));
+
+    client_ptr_ = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(this, "FollowWaypoints");
 
     RCLCPP_INFO(this->get_logger(), "MAKE SURE THAT ROBOT HAS AN EMPTY 1mX1m AREA IN FRONT OF IT");
     RCLCPP_INFO(this->get_logger(), "Select mode: \n"
@@ -61,11 +69,12 @@ public:
     }
     else
     {
-      bool is_goal = true;
-      while (is_goal)
-      {
-        is_goal = send_goal();
-      }
+      // bool is_goal = true;
+      send_waypoints();
+      // while (is_goal)
+      // {
+      //   is_goal = send_goal();
+      // }
     }
   }
 
@@ -244,12 +253,88 @@ private:
     return true;
   }
 
+  void send_waypoints()
+  {
+    if (!this->client_ptr_)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Action client not initialized");
+    }
+    if (!this->client_ptr_->wait_for_action_server(std::chrono::seconds(10)))
+    {
+      RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+      // this->goal_done_ = true;
+      return;
+    }
+
+    auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
+    send_goal_options.feedback_callback = std::bind(&SimpleNavigationGoals::feedback_callback, this, std::placeholders::_1, std::placeholders::_2);
+    send_goal_options.result_callback = std::bind(&SimpleNavigationGoals::result_callback, this, std::placeholders::_1);
+    geometry_msgs::msg::PoseStamped goal_msg;
+
+    goal_msg.header.frame_id = "map";
+    goal_msg.pose.position.x = 6.5;
+    goal_msg.pose.position.y = -1;
+    goal_msg.pose.orientation.z = 0;
+
+    geometry_msgs::msg::PoseStamped goal_msg_2;
+    goal_msg_2.header.frame_id = "map";
+    goal_msg_2.pose.position.x = 0;
+    goal_msg_2.pose.position.y = -1;
+    goal_msg_2.pose.orientation.z = 0;
+
+    auto new_goal = nav2_msgs::action::FollowWaypoints::Goal();
+
+    for (int i = 0; i < 2; i++)
+    {
+      new_goal.poses.emplace_back(i % 2 ? goal_msg : goal_msg_2);
+    }
+
+    auto goal_handle_future = this->client_ptr_->async_send_goal(new_goal, send_goal_options);
+  }
+
+  void feedback_callback(GoalHandle::SharedPtr, const std::shared_ptr<const nav2_msgs::action::FollowWaypoints::Feedback> feedback)
+  {
+    RCLCPP_INFO(this->get_logger(), "Current waypoint: %d", feedback->current_waypoint);
+  }
+
+  void result_callback(const GoalHandle::WrappedResult &result)
+  {
+    // this->goal_done_ = true;
+    switch (result.code)
+    {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      break;
+    case rclcpp_action::ResultCode::ABORTED:
+      RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+      return;
+    case rclcpp_action::ResultCode::CANCELED:
+      RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+      return;
+    default:
+      RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+      return;
+    }
+    RCLCPP_INFO(this->get_logger(), "Result received, Missed waypoints:");
+    if (result.result->missed_waypoints.size() == 0)
+    {
+      RCLCPP_INFO(this->get_logger(), "None");
+    }
+    else
+    {
+      for (auto number : result.result->missed_waypoints)
+      {
+        RCLCPP_INFO(this->get_logger(), "%d", number);
+      }
+    }
+  }
   rclcpp::Client<std_srvs::srv::Empty>::SharedPtr reinit_client_;
   rclcpp::Client<nav2_msgs::srv::ClearCostmapAroundRobot>::SharedPtr clear_costmap_client_;
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_init_pose_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_vel_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_goal_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr amcl_subscriber_;
+
+  rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr client_ptr_;
 
   rclcpp::Rate loop_rate_;
   bool first_callback_ = true;
