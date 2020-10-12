@@ -3,7 +3,7 @@ ekf_map_node:
         use_sim_time: True
         frequency: 10.0
         two_d_mode: true
-        publish_tf: true
+        publish_tf: false
 
         map_frame: map              # Defaults to "map" if unspecified
         odom_frame: odom            # Defaults to "odom" if unspecified

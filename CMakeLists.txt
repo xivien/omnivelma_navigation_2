@@ -51,8 +51,15 @@ endif()
 add_executable(laserscan_multi_merger src/laserscan_multi_merger.cpp)
 ament_target_dependencies(laserscan_multi_merger ${dependencies})
 
-add_executable(navigation_helper src/simple_navigation_goals.cpp)
-ament_target_dependencies(navigation_helper ${dependencies})
+add_executable(localization_homing src/localization_homing.cpp)
+ament_target_dependencies(localization_homing ${dependencies})
+
+add_executable(simple_goals src/simple_goals.cpp)
+ament_target_dependencies(simple_goals ${dependencies})
+
+add_executable(waypoint_follower src/waypoint_follower.cpp)
+ament_target_dependencies(waypoint_follower ${dependencies})
+
 # Install launch files.
 install(DIRECTORY
   launch
@@ -63,7 +70,9 @@ install(DIRECTORY
 )
 install(TARGETS
   laserscan_multi_merger
-  navigation_helper
+  localization_homing
+  simple_goals
+  waypoint_follower
   DESTINATION lib/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies})
