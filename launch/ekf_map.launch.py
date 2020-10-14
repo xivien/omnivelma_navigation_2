@@ -10,17 +10,18 @@ from launch.actions import DeclareLaunchArgument
 
 
 def generate_launch_description():
-    ekf_odom_params = os.path.join(
+    ekf_map_params = os.path.join(
         get_package_share_directory('omnivelma_navigation_2'),
         'params',
-        'ekf_odom.yaml')
+        'ekf_map.yaml')
 
     return LaunchDescription([
         launch_ros.actions.Node(
             package='robot_localization',
             executable='ekf_node',
-            name='ekf_odom_node',
+            name='ekf_map_node',
             output='screen',
-            parameters=[ekf_odom_params],
+            parameters=[ekf_map_params],
+            remappings=[('/odometry/filtered','amcl/filtered')],
         ),
     ])
