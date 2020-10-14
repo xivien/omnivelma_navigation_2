@@ -1,0 +1,4 @@
+waypoint_follower_node:
+  ros__parameters:
+    waypoints: [2.0, -2.0, 2.0, 
+                2.0, 0.0, 0.0]

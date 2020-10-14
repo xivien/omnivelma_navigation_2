@@ -16,13 +16,11 @@ class SimpleGoals : public rclcpp::Node
 public:
     SimpleGoals() : Node("simple_navigation_goals")
     {
-        rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
-        set_parameter(simTime);
-
         pub_goal_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 1);
         bool isGoal = true;
         while (isGoal)
         {
+            rclcpp::spin_some(this->get_node_base_interface());
             isGoal = send_goal();
         }
         RCLCPP_INFO(this->get_logger(), "Finished running");
