@@ -56,7 +56,7 @@ private:
 
         geometry_msgs::msg::PoseStamped goal_msg;
         goal_msg.header.frame_id = "map";
-        for (int i = 0; i < waypoints.size(); i = i + 3)
+        for (size_t i = 0; i < waypoints.size(); i = i + 3)
         {
             RCLCPP_INFO(this->get_logger(), "Waypoint added x:%f y:%f th:%f", waypoints[i], waypoints[i + 1], waypoints[i + 2]);
             goal_msg.pose.position.x = waypoints[i];
@@ -70,7 +70,12 @@ private:
 
     void feedback_callback(GoalHandle::SharedPtr, const std::shared_ptr<const FollowWaypointsAction::Feedback> feedback)
     {
-        // RCLCPP_INFO(this->get_logger(), "Current waypoint: %d", feedback->current_waypoint);
+        feedback_it_++;
+        if (feedback_it_ % 10 == 0)
+        {
+            RCLCPP_INFO(this->get_logger(), "Current waypoint: %d", feedback->current_waypoint);
+            feedback_it_ = 0;
+        }
     }
 
     void result_callback(const GoalHandle::WrappedResult &result)
@@ -105,7 +110,7 @@ private:
     }
 
     rclcpp_action::Client<FollowWaypointsAction>::SharedPtr client_ptr_;
-
+    int feedback_it_ = 0;
     std::vector<double> waypoints;
 };
 

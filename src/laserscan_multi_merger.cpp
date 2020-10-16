@@ -21,6 +21,8 @@ public:
         set_parameter(simTime);
         tfListener = new tf2_ros::TransformListener(tf2_buffer);
 
+        rclcpp::sleep_for(2s);
+
         publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
         timer_ = this->create_wall_timer(
             50ms, std::bind(&MergedLaserPublisher::timer_callback, this));
@@ -33,14 +35,14 @@ public:
 private:
     void timer_callback()
     {
-        if (!data_1 || !data_2)
-        {
-            RCLCPP_INFO(this->get_logger(), "Empty laser scan");
-            return;
-        }
         if (!tf2_buffer._frameExists("base_laser"))
         {
             RCLCPP_INFO(this->get_logger(), "base_laser doesn't exist");
+            return;
+        }
+        if (!data_1 || !data_2)
+        {
+            RCLCPP_INFO(this->get_logger(), "Empty laser scan");
             return;
         }
         if (data_1->header.frame_id == "")
