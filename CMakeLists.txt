@@ -21,6 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL REQUIRED)
@@ -36,6 +37,7 @@ sensor_msgs
 std_msgs
 std_srvs
 nav2_msgs
+nav_msgs
 PCL
 pcl_conversions
 tf2
@@ -60,6 +62,9 @@ ament_target_dependencies(simple_goals ${dependencies})
 add_executable(waypoint_follower src/waypoint_follower.cpp)
 ament_target_dependencies(waypoint_follower ${dependencies})
 
+add_executable(straight_test src/tests/straight_test.cpp)
+ament_target_dependencies(straight_test ${dependencies})
+
 # Install launch files.
 install(DIRECTORY
   launch
@@ -73,6 +78,7 @@ install(TARGETS
   localization_homing
   simple_goals
   waypoint_follower
+  straight_test
   DESTINATION lib/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies})
