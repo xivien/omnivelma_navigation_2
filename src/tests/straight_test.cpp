@@ -16,11 +16,8 @@ using namespace std::chrono_literals;
 class StraightTest : public rclcpp::Node
 {
 public:
-    StraightTest() : Node("straight_test_node"), loop_rate_(20.0f), freq_(20.0f)
+    StraightTest() : Node("straight_test_node"), loop_rate_(20.0f), freq_(20.0f), destination_(2.0f)
     {
-        rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
-        set_parameter(simTime);
-
         rclcpp::sleep_for(2s);
 
         pub_vel_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
@@ -30,7 +27,6 @@ public:
             "/amcl_pose", 10, std::bind(&StraightTest::pose_callback, this, std::placeholders::_1));
 
         rclcpp::sleep_for(2s);
-
         do_trajectory();
     }
 
@@ -40,11 +36,10 @@ private:
         geometry_msgs::msg::Twist vel_msg;
         vel_msg.linear.x = vel_;
         float last_dist = 10000.0f;
-        float destination = 2.0f;
 
         rclcpp::spin_some(this->get_node_base_interface());
 
-        float dist = destination - pos_x_;
+        float dist = destination_ - pos_x_;
         while (std::abs(dist) <= std::abs(last_dist))
         {
             pub_vel_->publish(vel_msg);
@@ -52,7 +47,7 @@ private:
 
             loop_rate_.sleep();
             rclcpp::spin_some(this->get_node_base_interface());
-            dist = destination - pos_x_;
+            dist = destination_ - pos_x_;
         }
         vel_msg.linear.x = 0.0f;
         pub_vel_->publish(vel_msg);
@@ -60,11 +55,20 @@ private:
         loop_rate_.sleep();
         rclcpp::spin_some(this->get_node_base_interface());
 
-        destination = 0.0f;
+        destination_ = 0.0f;
         last_dist = 10000.0f;
         dist = pos_x_;
 
+        rclcpp::sleep_for(2s);
         vel_msg.linear.x = -vel_;
+
+        // first few messages hardcoded so robot doesnt get stuck
+        for (int i = 0; i < 5; i++)
+        {
+            pub_vel_->publish(vel_msg);
+            loop_rate_.sleep();
+            rclcpp::spin_some(this->get_node_base_interface());
+        }
         while (std::abs(dist) <= std::abs(last_dist))
         {
             pub_vel_->publish(vel_msg);
@@ -72,7 +76,7 @@ private:
 
             loop_rate_.sleep();
             rclcpp::spin_some(this->get_node_base_interface());
-            dist = destination - pos_x_;
+            dist = pos_x_ - destination_;
         }
         vel_msg.linear.x = 0.0f;
         pub_vel_->publish(vel_msg);
@@ -94,6 +98,7 @@ private:
     float freq_;
     float vel_ = 0.3f;
     float pos_x_;
+    float destination_;
 
     nav_msgs::msg::Odometry::SharedPtr odom_;
     geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr amcl_pose_;

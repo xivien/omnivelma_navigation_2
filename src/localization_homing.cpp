@@ -11,6 +11,11 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
+
+#include "nav_msgs/msg/odometry.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Matrix3x3.h"
+
 using namespace std::chrono_literals;
 
 class LocalizationHoming : public rclcpp::Node
@@ -27,7 +32,8 @@ public:
     pub_vel_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 1);
     amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
         "/amcl_pose", 1, std::bind(&LocalizationHoming::pose_callback, this, std::placeholders::_1));
-
+    odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "/odom", 10, std::bind(&LocalizationHoming::odom_callback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "MAKE SURE THAT ROBOT HAS AN EMPTY 1mX1m AREA IN FRONT OF IT");
     RCLCPP_INFO(this->get_logger(), "Select mode: \n"
                                     "0 - reset localization and do homing sequence \n"
@@ -46,18 +52,31 @@ public:
     default:
       break;
     }
-
     do_homing_sequence();
-
     if (cov_x_ > cov_tol_ || cov_y_ > cov_tol_)
     {
       RCLCPP_INFO(this->get_logger(), "High covariance");
       RCLCPP_INFO(this->get_logger(), "Use teleop_twist_keyboard to drive manually and improve localization");
     }
-    RCLCPP_INFO(this->get_logger(), "Homing done");
+    RCLCPP_INFO(this->get_logger(), "Homing done, localization quality is good");
   }
 
 private:
+  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+  {
+    //when testing with Odometry
+    tf2::Quaternion q(
+        msg->pose.pose.orientation.x,
+        msg->pose.pose.orientation.y,
+        msg->pose.pose.orientation.z,
+        msg->pose.pose.orientation.w);
+    tf2::Matrix3x3 m(q);
+    double roll, pitch;
+    m.getRPY(roll, pitch, yaw_);
+    pos_x_ = msg->pose.pose.position.x;
+    pos_y_ = msg->pose.pose.position.y;
+  }
+
   void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
   {
     cov_x_ = msg->pose.covariance[0];
@@ -138,76 +157,130 @@ private:
     rclcpp::spin_some(this->get_node_base_interface());
   }
 
-  void do_homing_sequence()
+  void do_square()
   {
-    // TODO use odometry
-    // simple controls without checking for odometry
-    float vel = 0.3f;
-    float omega = 0.3f;
-    float dist = 1.0f;
+    std::array<float, 4> destination_x = {2.0f, 2.0f, 0.0f, 0.0f};
+    std::array<float, 4> destination_y = {0.0f, -2.0f, -2.0f, 0.0f};
+    geometry_msgs::msg::Twist vel_msg;
 
-    int mov_steps = freq_ * dist / vel;
-    int rot_steps = freq_ * 2 * M_PI / omega;
-
-    geometry_msgs::msg::Twist new_msg;
-
-    std::array<int, 4> dir_x = {1, 0, -1, 0};
-    std::array<int, 4> dir_y = {0, -1, 0, 1};
-
-    RCLCPP_INFO(this->get_logger(), "Homing sequence initiated ... rotating");
-    for (int i = 0; i < rot_steps; i++)
+    for (size_t i = 0; i < 4; i++)
     {
-      new_msg.angular.z = omega;
-      pub_vel_->publish(new_msg);
+      float last_direct = 10000.0f;
+      float last_dist = 10000.0f;
+
+      float dx, dy;
+      dx = destination_x[i] - pos_x_;
+      dy = destination_y[i] - pos_y_;
+
+      float direct = std::atan2(dy, dx) - yaw_;
+      last_direct = direct;
+
+      while (true)
+      {
+        vel_msg.linear.x = 0.0f;
+        vel_msg.linear.y = 0.0f;
+        vel_msg.angular.z = -vel_;
+        pub_vel_->publish(vel_msg);
+        loop_rate_.sleep();
+        rclcpp::spin_some(this->get_node_base_interface());
+
+        last_direct = direct;
+
+        direct = std::atan2(dy, dx) - yaw_;
+
+        //cast to (-pi:pi)
+        if (direct < -M_PI)
+        {
+          direct += 2.0f * M_PI;
+        }
+        else if (direct > M_PI)
+        {
+          direct -= 2.0f * M_PI;
+        }
+
+        if (std::abs(direct) < 0.1f && std::abs(direct) > std::abs(last_direct))
+        {
+          break;
+        }
+      }
+      vel_msg.angular.z = 0.0f;
+      vel_msg.linear.x = vel_;
+      for (int i = 0; i < 5; i++)
+      {
+        pub_vel_->publish(vel_msg);
+        loop_rate_.sleep();
+        rclcpp::spin_some(this->get_node_base_interface());
+      }
+      dx = destination_x[i] - pos_x_;
+      dy = destination_y[i] - pos_y_;
+      float dist = std::sqrt(dx * dx + dy * dy);
+
+      while (std::abs(dist) <= std::abs(last_dist))
+      {
+        vel_msg.linear.x = vel_;
+        pub_vel_->publish(vel_msg);
+        loop_rate_.sleep();
+        rclcpp::spin_some(this->get_node_base_interface());
+
+        last_dist = dist;
+        dx = destination_x[i] - pos_x_;
+        dy = destination_y[i] - pos_y_;
+        dist = std::sqrt(dx * dx + dy * dy);
+      }
+      vel_msg.linear.x = 0.0f;
+      vel_msg.linear.x = vel_;
+      pub_vel_->publish(vel_msg);
+      loop_rate_.sleep();
+    }
+    // Turn to starting pose
+    float last_direct = 100000.0f;
+    float direct = -yaw_;
+    while (true)
+    {
+      vel_msg.linear.x = 0.0f;
+      vel_msg.linear.y = 0.0f;
+      vel_msg.angular.z = -vel_;
+      pub_vel_->publish(vel_msg);
       loop_rate_.sleep();
       rclcpp::spin_some(this->get_node_base_interface());
+
+      last_direct = direct;
+
+      direct = -yaw_;
+
+      //cast to (-pi:pi)
+      if (direct < -M_PI)
+      {
+        direct += 2.0f * M_PI;
+      }
+      else if (direct > M_PI)
+      {
+        direct -= 2.0f * M_PI;
+      }
+
+      if (std::abs(direct) < 0.1f && std::abs(direct) > std::abs(last_direct))
+      {
+        break;
+      }
     }
-
-    new_msg.angular.z = 0.0f;
-    pub_vel_->publish(new_msg);
+    vel_msg.angular.z = 0.0f;
+    pub_vel_->publish(vel_msg);
     loop_rate_.sleep();
-    clear_costmap();
+    rclcpp::spin_some(this->get_node_base_interface());
+  }
 
+  void do_homing_sequence()
+  {
+    rclcpp::sleep_for(1s);
     rclcpp::spin_some(this->get_node_base_interface());
     if (cov_x_ > cov_tol_ || cov_y_ > cov_tol_)
     {
       RCLCPP_INFO(this->get_logger(), "High covariance, doing a square 1x1m");
-      for (int i = 0; i < 4; i++)
-      {
-        for (int j = 0; j < mov_steps; j++)
-        {
-          new_msg.linear.x = vel * dir_x[i];
-          new_msg.linear.y = vel * dir_y[i];
-          pub_vel_->publish(new_msg);
-          rclcpp::spin_some(this->get_node_base_interface());
-          loop_rate_.sleep();
-        }
-      }
-
-      new_msg.linear.x = 0.0f;
-      new_msg.linear.y = 0.0f;
-      pub_vel_->publish(new_msg);
+      do_square();
       clear_costmap();
       loop_rate_.sleep();
     }
-
-    rclcpp::spin_some(this->get_node_base_interface());
-    if (cov_x_ > cov_tol_ || cov_y_ > cov_tol_)
-    {
-      RCLCPP_INFO(this->get_logger(), "rotating again");
-      for (int i = 0; i < rot_steps; i++)
-      {
-        new_msg.angular.z = omega;
-        pub_vel_->publish(new_msg);
-        loop_rate_.sleep();
-        rclcpp::spin_some(this->get_node_base_interface());
-      }
-      new_msg.angular.z = 0.0f;
-      pub_vel_->publish(new_msg);
-      loop_rate_.sleep();
-      rclcpp::spin_some(this->get_node_base_interface());
-      clear_costmap();
-    }
+    rclcpp::sleep_for(1s);
     rclcpp::spin_some(this->get_node_base_interface());
   }
 
@@ -216,12 +289,17 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_init_pose_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_vel_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr amcl_subscriber_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber_;
+
+  nav_msgs::msg::Odometry::SharedPtr odom_;
 
   rclcpp::Rate loop_rate_;
   int mode_;
   float freq_;
   double cov_x_, cov_y_;
   float cov_tol_;
+  double yaw_, pos_x_, pos_y_;
+  float vel_ = 0.3f;
 };
 
 int main(int argc, char *argv[])

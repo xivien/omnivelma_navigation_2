@@ -65,6 +65,12 @@ ament_target_dependencies(waypoint_follower ${dependencies})
 add_executable(straight_test src/tests/straight_test.cpp)
 ament_target_dependencies(straight_test ${dependencies})
 
+add_executable(turn_test src/tests/turn_test.cpp)
+ament_target_dependencies(turn_test ${dependencies})
+
+add_executable(square_test src/tests/square_test.cpp)
+ament_target_dependencies(square_test ${dependencies})
+
 # Install launch files.
 install(DIRECTORY
   launch
@@ -79,6 +85,8 @@ install(TARGETS
   simple_goals
   waypoint_follower
   straight_test
+  turn_test
+  square_test
   DESTINATION lib/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies})
