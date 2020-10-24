@@ -20,7 +20,6 @@ def generate_launch_description():
         ],
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
-        prefix=['gdb -ex run --args'],
         name='slam_toolbox',
         output='screen')
 
