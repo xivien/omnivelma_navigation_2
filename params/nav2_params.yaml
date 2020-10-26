@@ -4,26 +4,19 @@ amcl:
     tf_broadcast: True
     alpha1: 0.2
     alpha2: 0.2
-    alpha3: 0.2
+    alpha3: 0.4
     alpha4: 0.2
-    alpha5: 0.2
+    alpha5: 0.1
     base_frame_id: "base_footprint"
     global_frame_id: "map"
-    laser_likelihood_max_dist: 2.0
-    laser_max_range: 20.0
-    laser_min_range: -1.0
-    max_beams: 60
+    odom_frame_id: "odom"
     max_particles: 2000
     min_particles: 500
-    odom_frame_id: "odom"
-    recovery_alpha_fast: 0.0
-    recovery_alpha_slow: 0.0
     robot_model_type: "omnidirectional"
     save_pose_rate: 0.5
-    transform_tolerance: 1.0
-    update_min_a: 0.25
+    transform_tolerance: 0.2
+    update_min_a: 0.2
     update_min_d: 0.25
-    z_hit: 0.5
     set_initial_pose: true
     initial_pose: {0.0, 0.0, 0.0, 0.0}
     scan_topic: scan
@@ -39,10 +32,11 @@ amcl_rclcpp_node:
 bt_navigator:
   ros__parameters:
     use_sim_time: True
+    transform_tolerance: 0.1
     global_frame: map
     robot_base_frame: base_footprint
     odom_topic: /odom
-    default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
+    default_bt_xml_filename: "nav_bt.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_follow_path_action_bt_node
@@ -76,63 +70,62 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001 # don't filter y velocity messages
     min_theta_velocity_threshold: 0.001
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugin: "goal_checker"
     controller_plugins: ["FollowPath"]
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.2
-      yaw_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.2
       stateful: True
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
-      debug_trajectory_details: True
-      min_vel_x: -0.3
+      min_vel_x: -0.2
       min_vel_y: -0.3
-      max_vel_x: 0.3
+      max_vel_x: 0.58
       max_vel_y: 0.3
+      min_speed_xy: 0.0
+      max_speed_xy: 0.5
+      acc_lim_x: 0.5
+      acc_lim_y: 0.3
+      decel_lim_x: -0.5
+      decel_lim_y: -0.3
+
       max_vel_theta: 0.3
-      min_speed_xy: -0.3
-      max_speed_xy: 0.3
-      min_speed_theta: -0.3
-      acc_lim_x: 1.0
-      acc_lim_y: 1.0
-      acc_lim_theta: 1.0
-      decel_lim_x: -1.0
-      decel_lim_y: -1.0
-      decel_lim_theta: -1.0
+      min_speed_theta: 0.0
+      acc_lim_theta: 0.5
+      decel_lim_theta: -0.5
+
       vx_samples: 10
       vy_samples: 10
       vtheta_samples: 10
+
       sim_time: 2.0
-      linear_granularity: 0.05
-      angular_granularity: 0.025
       transform_tolerance: 0.2
       xy_goal_tolerance: 0.2
       yaw_goal_tolerance: 0.25
-      trans_stopped_velocity: 0.25
-      short_circuit_trajectory_evaluation: True
       stateful: True
-      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
-      PathAlign.scale: 10.0
+
+      trans_stopped_velocity: 0.1  
+      rot_stopped_velocity: 0.05  
+      
+      critics: ["BaseObstacle", "GoalAlign", "GoalDist", "Oscillation", "PathAlign", "PathDist", "RotateToGoal", "Twirling"]
+      BaseObstacle.scale: 0.02 # Scores a trajectory based on where the path passes over the costmap. To use this properly, you must use the inflation layer in costmap to expand obstacles by the robot's radius.
+      PathAlign.scale: 32.0 # Scores a trajectory based on how well it is aligned to the path provided by the global planner.
       PathAlign.forward_point_distance: 0.1
-      GoalAlign.scale: 10.0
+      GoalAlign.scale: 50.0  # Scores a trajectory based on how well aligned the trajectory is with the goal pose.
       GoalAlign.forward_point_distance: 0.1
-      PathDist.scale: 32.0
-      GoalDist.scale: 50.0
-      RotateToGoal.scale: 32.0
-
-      # critics: ["Twirling", "RotateToGoal", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      # BaseObstacle.scale: 1.0 # Scores a trajectory based on where the path passes over the costmap. To use this properly, you must use the inflation layer in costmap to expand obstacles by the robot's radius.
-      # PathAlign.scale: 1.0 # Scores a trajectory based on how well it is aligned to the path provided by the global planner.
-      # GoalAlign.scale: 1.0 # Scores a trajectory based on how well aligned the trajectory is with the goal pose.
-      # PathDist.scale: 32.0 # Scores a trajectory based on how far it ends up from the path provided by the global planner.
-      # GoalDist.scale: 50.0 # Scores a trajectory based on how close the trajectory gets the robot to the goal pose.
-      # RotateToGoal.scale: 1.0 # Only allows the robot to rotate to the goal orientation when it is sufficiently close to the goal location
-      # Twirling.scale: 1.0 # Prevents holonomic robots from spinning as they make their way to the goal.
-      #  # ObstacleFootprint.scale: 1.0 # Scores a trajectory based on verifying all points along the robot's footprint don't touch an obstacle marked in the costmap.
-      #  # Oscilation.scale: 1.0 #  Prevents the robot from just moving backwards and forwards.
-
+      PathDist.scale: 32.0 # Scores a trajectory based on how far it ends up from the path provided by the global planner. 
+      GoalDist.scale: 50.0 # Scores a trajectory based on how close the trajectory gets the robot to the goal pose.
+      RotateToGoal.scale: 32.0 # Only allows the robot to rotate to the goal orientation when it is sufficiently close to the goal location
+      Oscilation.scale: 1.0 #  Prevents the robot from just moving backwards and forwards.
+      Twirling.scale: 1.0 # Prevents holonomic robots from spinning as they make their way to the goal.
+     
 controller_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
@@ -146,16 +139,17 @@ local_costmap:
       robot_base_frame: base_footprint
       use_sim_time: True
       rolling_window: true
-      always_send_full_costmap: false
-      width: 4
-      height: 4
+      width: 5
+      height: 5
       resolution: 0.05
-      footprint: "[[-0.45, -0.4], [0.45, -0.4], [0.45, 0.4], [-0.45, 0.4]]" # prostokatne wymiary robota
-      footprint_padding: 0.05
+      robot_radius: 0.55
+      # footprint: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]" # prostokatne wymiary robota
+      # [[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]
+      footprint_padding: 0.1
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 1.5
+        cost_scaling_factor: 2.58
         inflation_radius: 1.0
         inflate_around_unknown: True
       obstacle_layer:
@@ -166,8 +160,8 @@ local_costmap:
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          obstacle_range: 3.0
-          raytrace_range: 3.0
+          obstacle_range: 4.0
+          raytrace_range: 5.0
           marking: True
           clearing: True
           data_type: "LaserScan"
@@ -187,8 +181,9 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: True
-      footprint: "[[-0.45, -0.4], [0.45, -0.4], [0.45, 0.4], [-0.45, 0.4]]" # prostokatne wymiary robota
-      footprint_padding: 0.05
+      robot_radius: 0.55
+      # footprint: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]" # prostokatne wymiary robota
+      footprint_padding: 0.1
       resolution: 0.04
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"] # obstacle layer to add changes to a map
       obstacle_layer:
@@ -199,8 +194,8 @@ global_costmap:
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          obstacle_range: 3.0
-          raytrace_range: 3.0
+          obstacle_range: 4.0
+          raytrace_range: 5.0
           marking: True
           clearing: True
           data_type: "LaserScan"
@@ -210,7 +205,7 @@ global_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 1.5
+        cost_scaling_factor: 2.58
         inflation_radius: 1.0
       always_send_full_costmap: True
   global_costmap_client:
@@ -265,9 +260,9 @@ recoveries_server:
     transform_timeout: 0.1
     use_sim_time: true
     simulate_ahead_time: 2.0
-    max_rotational_vel: 1.0
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 0.9
+    max_rotational_vel: 0.3
+    min_rotational_vel: -0.3
+    rotational_acc_lim: 0.5
 
 robot_state_publisher:
   ros__parameters:

@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 class LocalizationHoming : public rclcpp::Node
 {
 public:
-  LocalizationHoming() : Node("homing_node"), loop_rate_(10.0f), freq_(10.0f), cov_tol_(0.1)
+  LocalizationHoming() : Node("homing_node"), loop_rate_(10.0f), freq_(10.0f), cov_tol_(0.2)
   {
     rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
     set_parameter(simTime);
