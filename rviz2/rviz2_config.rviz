@@ -205,8 +205,6 @@ Visualization Manager:
           Value: true
         base_laser:
           Value: false
-        camera_link:
-          Value: false
         camera_link_reoriented:
           Value: false
         map:
@@ -232,8 +230,7 @@ Visualization Manager:
                 base_laser:
                   {}
                 camera_link_reoriented:
-                  camera_link:
-                    {}
+                  {}
                 monokl_l_heart:
                   {}
                 monokl_r_heart:
@@ -423,6 +420,26 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /local_plan
       Value: false
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz_default_plugins/PoseArray
+      Color: 255; 25; 0
+      Enabled: false
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /teb_poses
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -466,16 +483,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 22.01599884033203
+      Distance: 19.79530143737793
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.0539069175720215
-        Y: -0.2124466896057129
-        Z: 0.04331947863101959
+        X: 4.779561996459961
+        Y: 0.0072370413690805435
+        Z: 0.0460321269929409
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

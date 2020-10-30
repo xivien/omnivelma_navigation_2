@@ -72,7 +72,8 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
     goal_checker_plugin: "goal_checker"
-    controller_plugins: ["FollowPath"]
+    # controller_plugins: ["FollowPath"]
+    controller_plugins: ["DynamicFollowPath"] # change also in nav_bt.xml
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.5
@@ -125,7 +126,39 @@ controller_server:
       RotateToGoal.scale: 32.0 # Only allows the robot to rotate to the goal orientation when it is sufficiently close to the goal location
       Oscilation.scale: 1.0 #  Prevents the robot from just moving backwards and forwards.
       Twirling.scale: 1.0 # Prevents holonomic robots from spinning as they make their way to the goal.
-     
+    DynamicFollowPath:
+    # https://github.com/rst-tu-dortmund/teb_local_planner_tutorials/blob/melodic-devel/cfg/omnidir/teb_local_planner_params.yaml
+      plugin: teb_local_planner::TebLocalPlannerROS
+      footprint_model.type: "polygon"
+      footprint_model.vertices: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]"
+      # footprint_model.type: "point"
+      min_obstacle_dist: 0.3 # This value must also include our robot radius, since footprint_model is set to "point".
+      inflation_dist: 0.6
+      costmap_converter_plugin: costmap_converter::CostmapToPolygonsDBSMCCH
+      costmap_converter_spin_thread: True
+      costmap_converter_rate: 5
+      enable_homotopy_class_planning: True
+      enable_multithreading: True
+      # weight_obstacle: 100.0
+      optimization_verbose: False
+      teb_autoresize: True
+      min_samples: 3
+      max_samples: 500
+      max_global_plan_lookahead_dist: 3.0
+      visualize_hc_graph: True
+      max_vel_x: 0.5
+      max_vel_x_backwards: 0.2
+      max_vel_y: 0.3
+      max_vel_theta: 0.3
+      acc_lim_x: 0.5
+      acc_lim_y: 0.3
+      acc_lim_theta: 0.5
+      min_turning_radius: 0.0 # omni-drive robot (can turn on place!)
+      xy_goal_tolerance: 0.2
+      yaw_goal_tolerance: 0.1
+      weight_kinematics_nh: 1.0 #http://wiki.ros.org/teb_local_planner/Tutorials/Planning%20for%20holonomic%20robots
+
+   
 controller_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True

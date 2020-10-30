@@ -83,6 +83,7 @@ def generate_launch_description():
         launch_arguments={
             'params_file': launch.substitutions.LaunchConfiguration('nav_params_file'),
             'default_bt_xml_filename': launch.substitutions.LaunchConfiguration('bt_file'),
+            'use_sim_time': 'true',
         }.items(),
     )
 
