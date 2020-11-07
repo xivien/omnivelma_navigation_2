@@ -35,7 +35,7 @@ bt_navigator:
     transform_tolerance: 0.1
     global_frame: map
     robot_base_frame: base_footprint
-    odom_topic: /odom
+    odom_topic: /odometry/filtered
     default_bt_xml_filename: "nav_bt.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
@@ -71,7 +71,7 @@ controller_server:
     min_y_velocity_threshold: 0.001 # don't filter y velocity messages
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugin: "goal_checker"
+    # goal_checker_plugin: "goal_checker"
     # controller_plugins: ["FollowPath"]
     controller_plugins: ["DynamicFollowPath"] # change also in nav_bt.xml
     progress_checker:
@@ -175,9 +175,8 @@ local_costmap:
       width: 5
       height: 5
       resolution: 0.05
-      robot_radius: 0.55
-      # footprint: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]" # prostokatne wymiary robota
-      # [[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]
+      # robot_radius: 0.55
+      footprint: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]" # prostokatne wymiary robota
       footprint_padding: 0.1
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
@@ -214,8 +213,8 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: True
-      robot_radius: 0.55
-      # footprint: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]" # prostokatne wymiary robota
+      # robot_radius: 0.55
+      footprint: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]" # prostokatne wymiary robota
       footprint_padding: 0.1
       resolution: 0.04
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"] # obstacle layer to add changes to a map

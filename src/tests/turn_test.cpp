@@ -25,7 +25,7 @@ public:
 
         pub_vel_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
         odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odom", 10, std::bind(&TurnTest::odom_callback, this, std::placeholders::_1));
+            "/odometry/filtered", 10, std::bind(&TurnTest::odom_callback, this, std::placeholders::_1));
         amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
             "/amcl_pose", 10, std::bind(&TurnTest::pose_callback, this, std::placeholders::_1));
 

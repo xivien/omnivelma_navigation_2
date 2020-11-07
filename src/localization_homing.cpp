@@ -33,7 +33,7 @@ public:
     amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
         "/amcl_pose", 1, std::bind(&LocalizationHoming::pose_callback, this, std::placeholders::_1));
     odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/odom", 10, std::bind(&LocalizationHoming::odom_callback, this, std::placeholders::_1));
+        "/odometry/filtered", 10, std::bind(&LocalizationHoming::odom_callback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "MAKE SURE THAT ROBOT HAS AN EMPTY 1mX1m AREA IN FRONT OF IT");
     RCLCPP_INFO(this->get_logger(), "Select mode: \n"
                                     "0 - reset localization and do homing sequence \n"

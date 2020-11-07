@@ -100,12 +100,12 @@ def generate_launch_description():
     ld.add_action(tf_broadcaster_cmd)
 
     # EKF doesnt work in simulation
-    # ld.add_action(ekf_odom_cmd)
+    ld.add_action(ekf_odom_cmd)
     # ld.add_action(ekf_map_cmd)
 
     # ld.add_action(amcl_cmd)
     # ld.add_action(slam_cmd)
-    ld.add_action(navigation_cmd)
+    # ld.add_action(navigation_cmd)
 
     return ld
 
