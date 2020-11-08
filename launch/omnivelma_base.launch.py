@@ -15,8 +15,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     omnivelma_dir = get_package_share_directory('omnivelma_navigation_2')
-    bringup_dir = get_package_share_directory('nav2_bringup')
-    launch_dir = os.path.join(bringup_dir, 'launch')
     rviz_config_dir = os.path.join(omnivelma_dir, 'rviz2/rviz2_config.rviz')
 
     nav_params_dir = os.path.join(omnivelma_dir, 'params', 'nav2_params.yaml')
@@ -55,6 +53,12 @@ def generate_launch_description():
         executable='laserscan_multi_merger',
         name='laserscan_multi_merger',
         output='screen')
+    
+    error_pub_cmd = Node(
+        package='omnivelma_navigation_2',
+        executable='error_publisher',
+        name='error_publisher',
+        output='screen')
 
     tf_broadcaster_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -76,36 +80,20 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(['not ', slam])),
     )
 
-    navigation_cmd = IncludeLaunchDescription(
-        launch.launch_description_sources.PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'navigation_launch.py')
-        ),
-        launch_arguments={
-            'params_file': launch.substitutions.LaunchConfiguration('nav_params_file'),
-            'default_bt_xml_filename': launch.substitutions.LaunchConfiguration('bt_file'),
-            'use_sim_time': 'true',
-        }.items(),
-    )
-
     # Create the launch description and populate
     ld = LaunchDescription()
 
     ld.add_action(use_slam_cmd)
     ld.add_action(nav_params_cmd)
     ld.add_action(bt_cmd)
-    # ld.add_action(map_cmd)
 
     ld.add_action(rviz_cmd)
     ld.add_action(laserscan_merger_cmd)
+    ld.add_action(error_pub_cmd)
     ld.add_action(tf_broadcaster_cmd)
 
-    # EKF doesnt work in simulation
     ld.add_action(ekf_odom_cmd)
     # ld.add_action(ekf_map_cmd)
-
-    # ld.add_action(amcl_cmd)
-    # ld.add_action(slam_cmd)
-    # ld.add_action(navigation_cmd)
 
     return ld
 

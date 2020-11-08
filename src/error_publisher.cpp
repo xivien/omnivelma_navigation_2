@@ -21,7 +21,7 @@ class StraightTest : public rclcpp::Node
 public:
     StraightTest() : Node("straight_test_node")
     {
-        rclcpp::sleep_for(2s);
+        rclcpp::sleep_for(1s);
 
         pub_err_odom_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/error/odom", 10);
         pub_err_odom_filtered_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/error/odom_filtered", 10);
@@ -30,12 +30,12 @@ public:
         filtered_odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
             "/odometry/filtered", 10, std::bind(&StraightTest::odom_filtered_callback, this, std::placeholders::_1));
         odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odom", 10, std::bind(&StraightTest::odom_callback, this, std::placeholders::_1));
+            "/odom/noisy", 10, std::bind(&StraightTest::odom_callback, this, std::placeholders::_1));
 
         amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
             "/amcl_pose", 10, std::bind(&StraightTest::amcl_callback, this, std::placeholders::_1));
-        perfect_pose_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/amcl_pose", 10, std::bind(&StraightTest::perfect_pose_callback, this, std::placeholders::_1));
+        perfect_pose_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "/omnivelma/pose", 10, std::bind(&StraightTest::perfect_pose_callback, this, std::placeholders::_1));
 
         rclcpp::sleep_for(1s);
     }
@@ -52,11 +52,10 @@ private:
             msg->pose.pose.orientation.y,
             msg->pose.pose.orientation.z,
             msg->pose.pose.orientation.w);
-        tf2::Quaternion q_error = q - perfect_or_;
-        error.pose.orientation.x = q_error.getX();
-        error.pose.orientation.y = q_error.getY();
-        error.pose.orientation.z = q_error.getZ();
-        error.pose.orientation.w = q_error.getW();
+        tf2::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+        error.pose.orientation.z = yaw - perfect_yaw_;
 
         pub_err_odom_->publish(error);
     }
@@ -72,11 +71,10 @@ private:
             msg->pose.pose.orientation.y,
             msg->pose.pose.orientation.z,
             msg->pose.pose.orientation.w);
-        tf2::Quaternion q_error = q - perfect_or_;
-        error.pose.orientation.x = q_error.getX();
-        error.pose.orientation.y = q_error.getY();
-        error.pose.orientation.z = q_error.getZ();
-        error.pose.orientation.w = q_error.getW();
+        tf2::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+        error.pose.orientation.z = yaw - perfect_yaw_;
 
         pub_err_odom_filtered_->publish(error);
     }
@@ -92,11 +90,11 @@ private:
             msg->pose.pose.orientation.y,
             msg->pose.pose.orientation.z,
             msg->pose.pose.orientation.w);
-        tf2::Quaternion q_error = q - perfect_or_;
-        error.pose.orientation.x = q_error.getX();
-        error.pose.orientation.y = q_error.getY();
-        error.pose.orientation.z = q_error.getZ();
-        error.pose.orientation.w = q_error.getW();
+        tf2::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+        error.pose.orientation.z = yaw - perfect_yaw_;
+        // zero if error > pi
 
         pub_err_amcl_->publish(error);
     }
@@ -105,15 +103,19 @@ private:
     {
         perfect_x_ = msg->pose.position.x;
         perfect_y_ = msg->pose.position.y;
-        perfect_or_ = tf2::Quaternion(
+        tf2::Quaternion q(
             msg->pose.orientation.x,
             msg->pose.orientation.y,
             msg->pose.orientation.z,
             msg->pose.orientation.w);
+
+        tf2::Matrix3x3 m(q);
+        double roll, pitch;
+        m.getRPY(roll, pitch, perfect_yaw_);
     }
 
     double perfect_x_, perfect_y_;
-    tf2::Quaternion perfect_or_;
+    double perfect_yaw_;
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr filtered_odom_subscriber_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber_;
