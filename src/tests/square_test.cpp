@@ -31,16 +31,18 @@ public:
 
         rclcpp::sleep_for(2s);
 
-        destination_x_ = {dest_x_, dest_x_, 0.0f, 0.0f};
-        destination_y_ = {0.0f, -dest_y_, -dest_y_, 0.0f};
+        std::array<float, 4> destination_x = {dest_x_, dest_x_, 0.0f, 0.0f};
+        std::array<float, 4> destination_y = {0.0f, -dest_y_, -dest_y_, 0.0f};
 
         switch (mode_)
         {
         case 1:
-            do_mode_1();
+            do_mode_1(destination_x, destination_y,1);
+            do_mode_1(destination_y, destination_x, -1);
+            // turn_to_starting_pose();
             break;
         case 2:
-            do_mode_2();
+            do_mode_2(destination_x, destination_y);
             break;
 
         default:
@@ -49,7 +51,7 @@ public:
     }
 
 private:
-    void do_mode_1()
+    void do_mode_1(std::array<float, 4>& destination_x, std::array<float, 4>& destination_y, int dir =1)
     {
         geometry_msgs::msg::Twist vel_msg;
 
@@ -59,8 +61,8 @@ private:
             float last_dist = 10000.0f;
 
             float dx, dy;
-            dx = destination_x_[i] - pos_x_;
-            dy = destination_y_[i] - pos_y_;
+            dx = destination_x[i] - pos_x_;
+            dy = destination_y[i] - pos_y_;
 
             float direct = std::atan2(dy, dx) - yaw_;
             last_direct = direct;
@@ -69,7 +71,7 @@ private:
             {
                 vel_msg.linear.x = 0.0f;
                 vel_msg.linear.y = 0.0f;
-                vel_msg.angular.z = -vel_;
+                vel_msg.angular.z = -dir*vel_;
                 pub_vel_->publish(vel_msg);
                 loop_rate_.sleep();
                 rclcpp::spin_some(this->get_node_base_interface());
@@ -101,8 +103,8 @@ private:
                 loop_rate_.sleep();
                 rclcpp::spin_some(this->get_node_base_interface());
             }
-            dx = destination_x_[i] - pos_x_;
-            dy = destination_y_[i] - pos_y_;
+            dx = destination_x[i] - pos_x_;
+            dy = destination_y[i] - pos_y_;
             float dist = std::sqrt(dx * dx + dy * dy);
 
             while (std::abs(dist) <= std::abs(last_dist))
@@ -113,15 +115,19 @@ private:
                 rclcpp::spin_some(this->get_node_base_interface());
 
                 last_dist = dist;
-                dx = destination_x_[i] - pos_x_;
-                dy = destination_y_[i] - pos_y_;
+                dx = destination_x[i] - pos_x_;
+                dy = destination_y[i] - pos_y_;
                 dist = std::sqrt(dx * dx + dy * dy);
             }
             vel_msg.linear.x = 0.0f;
-            vel_msg.linear.x = vel_;
             pub_vel_->publish(vel_msg);
             loop_rate_.sleep();
+            rclcpp::spin_some(this->get_node_base_interface());
         }
+    }
+
+    void turn_to_starting_pose(){
+        geometry_msgs::msg::Twist vel_msg;
         // Turn to starting pose
         float last_direct = 100000.0f;
         float direct = -yaw_;
@@ -158,7 +164,7 @@ private:
         loop_rate_.sleep();
         rclcpp::spin_some(this->get_node_base_interface());
     }
-    void do_mode_2()
+    void do_mode_2(std::array<float, 4>& destination_x, std::array<float, 4>& destination_y)
     {
         geometry_msgs::msg::Twist vel_msg;
 
@@ -168,8 +174,8 @@ private:
             float last_dy = 10000.0f;
 
             float dx, dy;
-            dx = destination_x_[i] - pos_x_;
-            dy = destination_y_[i] - pos_y_;
+            dx = destination_x[i] - pos_x_;
+            dy = destination_y[i] - pos_y_;
 
             while ((std::abs(dx) <= std::abs(last_dx) && std::abs(dy) <= std::abs(last_dy)) ||
                    std::abs(dx) > tol_ || std::abs(dy) >= tol_)
@@ -183,8 +189,8 @@ private:
 
                 last_dx = dx;
                 last_dy = dy;
-                dx = destination_x_[i] - pos_x_;
-                dy = destination_y_[i] - pos_y_;
+                dx = destination_x[i] - pos_x_;
+                dy = destination_y[i] - pos_y_;
             }
             vel_msg.linear.x = 0.0f;
             vel_msg.linear.y = 0.0f;
@@ -233,9 +239,6 @@ private:
     int mode_;
     float dest_x_, dest_y_;
     float tol_ = 0.1f;
-
-    std::array<float, 4> destination_x_;
-    std::array<float, 4> destination_y_;
 
     nav_msgs::msg::Odometry::SharedPtr odom_;
     geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr amcl_pose_;
