@@ -39,6 +39,13 @@ private:
 
         rclcpp::spin_some(this->get_node_base_interface());
 
+        for (int i = 0; i < 5; i++)
+        {
+            pub_vel_->publish(vel_msg);
+            loop_rate_.sleep();
+            rclcpp::spin_some(this->get_node_base_interface());
+        }
+
         float dist = destination_ - pos_x_;
         while (std::abs(dist) <= std::abs(last_dist))
         {
@@ -63,7 +70,7 @@ private:
         vel_msg.linear.x = -vel_;
 
         // first few messages hardcoded so robot doesnt get stuck
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 10; i++)
         {
             pub_vel_->publish(vel_msg);
             loop_rate_.sleep();

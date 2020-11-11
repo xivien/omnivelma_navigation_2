@@ -93,7 +93,7 @@ def generate_launch_description():
     ld.add_action(tf_broadcaster_cmd)
 
     ld.add_action(ekf_odom_cmd)
-    # ld.add_action(ekf_map_cmd)
+    ld.add_action(ekf_map_cmd)
 
     return ld
 

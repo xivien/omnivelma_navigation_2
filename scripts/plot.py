@@ -14,7 +14,6 @@ plots generated:
 - theta error in time
 '''
 import matplotlib.pyplot as plt
-import pandas as pd
 from os import listdir, walk
 from os.path import isfile, join
 import numpy as np
@@ -22,7 +21,6 @@ import math
 import sys
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-import tf2_ros
 
 import sqlite3
 from rclpy.serialization import deserialize_message
@@ -124,24 +122,26 @@ def main():
             plt.title(f'trajektoria')
             plt.xlabel('x [m]')
             plt.ylabel('y [m]')
-            ax.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='perfect position')
-            ax.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='filtered odometry')
             ax.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometry')
+            ax.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='filtered odometry')
+            ax.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='perfect position')
             # ax.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL localization')
-            fig.legend()
+            # fig.legend()
+            ax.legend(loc = 3)
             plt.grid()
-            axins = zoomed_inset_axes(ax, 3, loc=10)
-            axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='perfect position')
-            axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='filtered odometry')
+            axins = zoomed_inset_axes(ax, 3, loc=1)
             axins.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometry')
+            axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='filtered odometry')
+            axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='perfect position')
             # axins.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL localization')
-            x1, x2, y1, y2 = -0.15, 0.15, -0.15, 0.15 # specify the limits
+            x1, x2, y1, y2 = -0.2, 0.2, -0.2, 0.2 # specify the limits
             axins.set_xlim(x1, x2) # apply the x-limits
             axins.set_ylim(y1, y2) # apply the y-limits
+            axins.grid()
 
-            plt.yticks(visible=False)
-            plt.xticks(visible=False)
-            mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="0.5")
+            plt.yticks(visible=True)
+            plt.xticks(visible=True)
+            mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
             plt.savefig(f'{mypath}/trajectory.pdf')
 
 
@@ -149,9 +149,9 @@ def main():
 
             plt.figure(2)
             plt.grid()
-            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['x'], label='perfect position')
-            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['x'], label='filtered odometry')
             plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['x'], label='odometry')
+            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['x'], label='filtered odometry')
+            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['x'], label='perfect position')
             # plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['x'], label='AMCL localization')
             plt.xlabel('time [s]')
             plt.ylabel('x [m]')
@@ -164,9 +164,9 @@ def main():
 
             plt.figure(3)
             plt.grid()
-            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['y'], label='perfect position')
-            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['y'], label='filtered odometry')
             plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['y'], label='odometry')
+            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['y'], label='filtered odometry')
+            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['y'], label='perfect position')
             # plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['y'], label='AMCL localization')
             plt.xlabel('time [s]')
             plt.ylabel('y [m]')
@@ -180,9 +180,9 @@ def main():
 
             plt.figure(4)
             plt.grid()
-            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['th'], label='perfect position')
-            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['th'], label='filtered odometry')
             plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['th'], label='odometry')
+            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['th'], label='filtered odometry')
+            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['th'], label='perfect position')
             # plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['th'], label='AMCL localization')
             plt.xlabel('time [s]')
             plt.ylabel('theta [rad]')
@@ -196,15 +196,18 @@ def main():
 
             plt.figure(5)
             plt.grid()
-            odom_filtered_x_error = np.asarray(dfs['/error/odom_filtered']['x'])
-            odom_filtered_y_error = np.asarray(dfs['/error/odom_filtered']['y'])
-            odom_filtered_error = np.sqrt(np.add(np.power(odom_filtered_x_error,2),np.power(odom_filtered_y_error,2)))
-            plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'filtered odometry error')
 
             odom_x_error = np.asarray(dfs['/error/odom']['x'])
             odom_y_error = np.asarray(dfs['/error/odom']['y'])
             odom_error = np.sqrt(np.add(np.power(odom_x_error,2),np.power(odom_y_error,2)))
             plt.plot(dfs['/error/odom']['time'], odom_error, label = 'odometry error')
+
+            odom_filtered_x_error = np.asarray(dfs['/error/odom_filtered']['x'])
+            odom_filtered_y_error = np.asarray(dfs['/error/odom_filtered']['y'])
+            odom_filtered_error = np.sqrt(np.add(np.power(odom_filtered_x_error,2),np.power(odom_filtered_y_error,2)))
+            plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'filtered odometry error')
+
+
 
             # amcl_x_error = np.asarray(dfs['/error/amcl']['x'])
             # amcl_y_error = np.asarray(dfs['/error/amcl']['y'])
@@ -235,8 +238,8 @@ def main():
                 ax.grid()
                 ax.legend()
             
-            axs[0].set_title('odometry x and y error')
-            axs[1].set_title('filtered odometry x and y error')
+            axs[0].set_title('filtered odometry x and y error')
+            axs[1].set_title('odometry x and y error')
             # axs[2].set_title('AMCL x and y error')
             plt.savefig(f'{mypath}/error.pdf')
 

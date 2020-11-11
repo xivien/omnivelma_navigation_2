@@ -1,7 +1,7 @@
 amcl:
   ros__parameters:
     use_sim_time: True
-    tf_broadcast: True
+    tf_broadcast: false
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.4
@@ -72,8 +72,8 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
     # goal_checker_plugin: "goal_checker"
-    # controller_plugins: ["FollowPath"]
-    controller_plugins: ["DynamicFollowPath"] # change also in nav_bt.xml
+    controller_plugins: ["FollowPath"]
+    # controller_plugins: ["DynamicFollowPath"] # change also in nav_bt.xml
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.5

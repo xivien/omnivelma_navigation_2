@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 class SquareTest : public rclcpp::Node
 {
 public:
-    SquareTest() : Node("square_test_node"), loop_rate_(20.0f), freq_(20.0f), mode_(1), dest_x_(2), dest_y_(2)
+    SquareTest() : Node("square_test_node"), loop_rate_(20.0f), freq_(20.0f), mode_(2), dest_x_(2), dest_y_(2)
     {
         rclcpp::sleep_for(2s);
 
@@ -43,6 +43,7 @@ public:
             break;
         case 2:
             do_mode_2(destination_x, destination_y);
+            do_mode_2(destination_y, destination_x);
             break;
 
         default:
@@ -107,7 +108,7 @@ private:
             dy = destination_y[i] - pos_y_;
             float dist = std::sqrt(dx * dx + dy * dy);
 
-            while (std::abs(dist) <= std::abs(last_dist))
+            while (dist <= last_dist && dist > 1e-1)
             {
                 vel_msg.linear.x = vel_;
                 pub_vel_->publish(vel_msg);
@@ -234,7 +235,7 @@ private:
 
     rclcpp::Rate loop_rate_;
     float freq_;
-    float vel_ = 0.3f;
+    float vel_ = 0.5f;
     double yaw_, pos_x_, pos_y_;
     int mode_;
     float dest_x_, dest_y_;

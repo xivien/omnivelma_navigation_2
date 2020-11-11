@@ -40,7 +40,12 @@ private:
         vel_msg.angular.z = vel_;
         float last_theta = yaw_;
         float spinned = 0.0f;
-
+        for (int i = 0; i < 5; i++)
+        {
+            pub_vel_->publish(vel_msg);
+            loop_rate_.sleep();
+            rclcpp::spin_some(this->get_node_base_interface());
+        }
         while ((yaw_ + spinned) < destination_)
         {
             pub_vel_->publish(vel_msg);
@@ -49,6 +54,7 @@ private:
 
             if (yaw_ < last_theta)
             {
+
                 spinned += 2.0f * M_PI;
             }
             last_theta = yaw_;
