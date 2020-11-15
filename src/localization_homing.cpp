@@ -64,6 +64,11 @@ public:
 private:
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
   {
+    if(first_callback_){
+      first_callback_ = false;
+      start_pos_x_ = msg->pose.pose.position.x;
+      start_pos_y_ = msg->pose.pose.position.y;
+    }
     //when testing with Odometry
     tf2::Quaternion q(
         msg->pose.pose.orientation.x,
@@ -159,8 +164,8 @@ private:
 
   void do_square()
   {
-    std::array<float, 4> destination_x = {2.0f, 2.0f, 0.0f, 0.0f};
-    std::array<float, 4> destination_y = {0.0f, -2.0f, -2.0f, 0.0f};
+    std::array<float, 4> destination_x = {2.0f + start_pos_x_, 2.0f + start_pos_x_, 0.0f +start_pos_x_, 0.0f + start_pos_x_};
+    std::array<float, 4> destination_y = {0.0f +start_pos_y_, -2.0f +start_pos_y_ , -2.0f + start_pos_y_, 0.0f + start_pos_y_};
     geometry_msgs::msg::Twist vel_msg;
 
     for (size_t i = 0; i < 4; i++)
@@ -293,12 +298,14 @@ private:
 
   nav_msgs::msg::Odometry::SharedPtr odom_;
 
+  bool first_callback_ = true;
   rclcpp::Rate loop_rate_;
   int mode_;
   float freq_;
   double cov_x_, cov_y_;
   float cov_tol_;
   double yaw_, pos_x_, pos_y_;
+  double start_pos_x_, start_pos_y_;
   float vel_ = 0.3f;
 };
 

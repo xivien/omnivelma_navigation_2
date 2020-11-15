@@ -16,10 +16,10 @@
 
 using namespace std::chrono_literals;
 
-class StraightTest : public rclcpp::Node
+class ErrorPub : public rclcpp::Node
 {
 public:
-    StraightTest() : Node("straight_test_node")
+    ErrorPub() : Node("error_pub_node")
     {
         rclcpp::sleep_for(1s);
 
@@ -28,14 +28,14 @@ public:
         pub_err_amcl_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/error/amcl", 10);
 
         filtered_odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odometry/filtered", 10, std::bind(&StraightTest::odom_filtered_callback, this, std::placeholders::_1));
+            "/odometry/filtered", 10, std::bind(&ErrorPub::odom_filtered_callback, this, std::placeholders::_1));
         odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odom/noisy", 10, std::bind(&StraightTest::odom_callback, this, std::placeholders::_1));
+            "/odom/noisy", 10, std::bind(&ErrorPub::odom_callback, this, std::placeholders::_1));
 
         amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/amcl_pose", 10, std::bind(&StraightTest::amcl_callback, this, std::placeholders::_1));
+            "/amcl_pose", 10, std::bind(&ErrorPub::amcl_callback, this, std::placeholders::_1));
         perfect_pose_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-            "/omnivelma/pose", 10, std::bind(&StraightTest::perfect_pose_callback, this, std::placeholders::_1));
+            "/omnivelma/pose", 10, std::bind(&ErrorPub::perfect_pose_callback, this, std::placeholders::_1));
 
         rclcpp::sleep_for(1s);
     }
@@ -130,7 +130,7 @@ private:
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<StraightTest>());
+    rclcpp::spin(std::make_shared<ErrorPub>());
     rclcpp::shutdown();
     return 0;
 }

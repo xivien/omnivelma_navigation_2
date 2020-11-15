@@ -59,6 +59,12 @@ def generate_launch_description():
         executable='error_publisher',
         name='error_publisher',
         output='screen')
+    
+    cov_pub_cmd = Node(
+        package='omnivelma_navigation_2',
+        executable='cov_publisher',
+        name='cov_publisher',
+        output='screen')
 
     tf_broadcaster_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -90,10 +96,11 @@ def generate_launch_description():
     ld.add_action(rviz_cmd)
     ld.add_action(laserscan_merger_cmd)
     ld.add_action(error_pub_cmd)
+    ld.add_action(cov_pub_cmd)
     ld.add_action(tf_broadcaster_cmd)
 
     ld.add_action(ekf_odom_cmd)
-    ld.add_action(ekf_map_cmd)
+    # ld.add_action(ekf_map_cmd)
 
     return ld
 

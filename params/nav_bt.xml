@@ -1,5 +1,6 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
+  <PipelineSequence name="NavigationSequence">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="1.0">
@@ -26,5 +27,7 @@
         </SequenceStar>
       </ReactiveFallback>
     </RecoveryNode>
+    <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+  </PipelineSequence>
   </BehaviorTree>
 </root>

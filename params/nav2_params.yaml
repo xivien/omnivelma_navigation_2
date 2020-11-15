@@ -132,8 +132,11 @@ controller_server:
       footprint_model.type: "polygon"
       footprint_model.vertices: "[[0.36, 0.3775], [0.36, -0.3775], [-0.36, -0.3775], [-0.36, 0.3775]]"
       # footprint_model.type: "point"
-      min_obstacle_dist: 0.3 # This value must also include our robot radius, since footprint_model is set to "point".
+      # min_obstacle_dist: 0.3 # This value must also include our robot radius, since footprint_model is set to "point".
       inflation_dist: 0.6
+      include_dynamic_obstacles: True
+      dynamic_obstacle_inflation_dist: 0.6
+
       costmap_converter_plugin: costmap_converter::CostmapToPolygonsDBSMCCH
       costmap_converter_spin_thread: True
       costmap_converter_rate: 5

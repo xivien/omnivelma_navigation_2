@@ -74,6 +74,9 @@ ament_target_dependencies(square_test ${dependencies})
 add_executable(error_publisher src/error_publisher.cpp)
 ament_target_dependencies(error_publisher ${dependencies})
 
+add_executable(cov_publisher src/cov_publisher.cpp)
+ament_target_dependencies(cov_publisher ${dependencies})
+
 # Install launch files.
 install(DIRECTORY
   launch
@@ -91,6 +94,7 @@ install(TARGETS
   turn_test
   square_test
   error_publisher
+  cov_publisher
   DESTINATION lib/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies})
