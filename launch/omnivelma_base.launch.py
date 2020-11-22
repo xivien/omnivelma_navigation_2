@@ -17,22 +17,9 @@ def generate_launch_description():
     omnivelma_dir = get_package_share_directory('omnivelma_navigation_2')
     rviz_config_dir = os.path.join(omnivelma_dir, 'rviz2/rviz2_config.rviz')
 
-    nav_params_dir = os.path.join(omnivelma_dir, 'params', 'nav2_params.yaml')
-    bt_dir = os.path.join(omnivelma_dir, 'params', 'nav_bt.xml')
-
     slam = LaunchConfiguration('use_slam')
 
-    nav_params_cmd = launch.actions.DeclareLaunchArgument(
-        name='nav_params_file',
-        default_value=nav_params_dir,
-        description="Navigation parameters file"
-    )
 
-    bt_cmd = launch.actions.DeclareLaunchArgument(
-        name='bt_file',
-        default_value=bt_dir,
-        description="Behaviour tree file"
-    )
 
     use_slam_cmd = DeclareLaunchArgument(
         name='use_slam',
@@ -90,8 +77,6 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     ld.add_action(use_slam_cmd)
-    ld.add_action(nav_params_cmd)
-    ld.add_action(bt_cmd)
 
     ld.add_action(rviz_cmd)
     ld.add_action(laserscan_merger_cmd)
@@ -100,7 +85,7 @@ def generate_launch_description():
     ld.add_action(tf_broadcaster_cmd)
 
     ld.add_action(ekf_odom_cmd)
-    # ld.add_action(ekf_map_cmd)
+    ld.add_action(ekf_map_cmd)
 
     return ld
 

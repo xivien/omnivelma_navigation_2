@@ -15,7 +15,7 @@ class MergedLaserPublisher : public rclcpp::Node
 {
 public:
     MergedLaserPublisher()
-        : Node("Laser_Scan_Merger"), min_ang_(-3.1), max_ang_(3.1), range_min_(0.45), range_max_(20.0), frame_id_("base_laser")
+        : Node("Laser_Scan_Merger"), min_ang_(-3.13), max_ang_(3.13), range_min_(0.06), range_max_(20.0), frame_id_("base_laser")
     {
         rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
         set_parameter(simTime);
@@ -25,7 +25,7 @@ public:
 
         publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
         timer_ = this->create_wall_timer(
-            50ms, std::bind(&MergedLaserPublisher::timer_callback, this));
+            20ms, std::bind(&MergedLaserPublisher::timer_callback, this));
         subscription_1_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/monokl_l/scan", 1, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
         subscription_2_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -42,7 +42,7 @@ private:
         }
         if (!data_1 || !data_2)
         {
-            RCLCPP_INFO(this->get_logger(), "Empty laser scan");
+            // RCLCPP_INFO(this->get_logger(), "Empty laser scan");
             return;
         }
         if (data_1->header.frame_id == "")
@@ -76,12 +76,12 @@ private:
         scan_msg->header.frame_id = frame_id_.c_str();
         scan_msg->angle_min = min_ang_;
         scan_msg->angle_max = max_ang_;
-        scan_msg->angle_increment = 0.0058;
-        scan_msg->scan_time = 0.0333333;
+        scan_msg->angle_increment = 0.008742834441363811;
+        scan_msg->scan_time = 0.02;
         scan_msg->range_min = range_min_;
         scan_msg->range_max = range_max_;
 
-        uint32_t ranges_size = std::ceil((max_ang_ - min_ang_) / scan_msg->angle_increment) + 1; // Fixed SLAM
+        uint32_t ranges_size = std::ceil((max_ang_ - min_ang_) / scan_msg->angle_increment); // Fixed SLAM
         scan_msg->ranges.assign(ranges_size, range_max_ + 1.0);
 
         const double range_min_sq_ = range_min_ * range_min_;

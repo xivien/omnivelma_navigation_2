@@ -35,7 +35,7 @@ def get_pose(msg_types, topic_names, message, msg_type_id):
         pos = message.pose.position
         theta = message.pose.orientation.z
         if abs(theta) > 1:
-            theta = 0.0;
+            theta = 0.0
         return pos, theta
 
     if message_type == 'nav_msgs/msg/Odometry':
@@ -60,7 +60,7 @@ def get_pose(msg_types, topic_names, message, msg_type_id):
 
 
 def main():
-    path = '../bags/square_no_rot'
+    path = '../bags/amcl_better'
     dirs = next(walk(path))[1]
     dirs.sort()
     print(dirs)
@@ -69,6 +69,12 @@ def main():
     avg_MSE_odom_filtered = 0
     avg_MSE_th = 0
     avg_MSE_th_filtered = 0
+
+    avg_MSE_AMCL = 0
+    avg_MSE_AMCL_filtered = 0
+    avg_MSE_AMCL_th = 0
+    avg_MSE_AMCL_filtered_th = 0
+
     for dir in dirs:
         mypath = f'{path}/{dir}'
 
@@ -111,34 +117,28 @@ def main():
                     dfs[topic_names[id]]['th'].append(th)
                 dfs[topic_names[id]]['time'].append((row[2] - time0)/1e9)
 
-            # example topics
-            # /odom/noisy
-            # /omnivelma/pose
-            # /amcl_pose
-            # /error/amcl
-            # /error/odom
-            # /error/odom_filtered
-            # /odometry/filtered
 
-
-
+            dfs['/omnivelma/pose']['x'] = list(np.asarray(dfs['/omnivelma/pose']['x']) + 0.5)
+            dfs['/omnivelma/pose']['y'] = list(np.asarray(dfs['/omnivelma/pose']['y']) - 2.0)
 
             fig, ax = plt.subplots()
-            plt.title(f'trajektoria')
+            plt.title(f'Trajektoria')
             plt.xlabel('x [m]')
             plt.ylabel('y [m]')
-            ax.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometry')
-            ax.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='filtered odometry')
-            ax.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='perfect position')
-            # ax.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL localization')
+            # ax.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometria')
+            # ax.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='odometria przefiltrowana')
+            ax.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'] , label='pozycja w symulatorze')
+            ax.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL')
+            ax.plot(dfs['/amcl/filtered']['x'],dfs['/amcl/filtered']['y'], label='AMCL + EKF')
             # fig.legend()
             ax.legend(loc = 3)
             plt.grid()
-            axins = zoomed_inset_axes(ax, 3, loc=1)
-            axins.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometry')
-            axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='filtered odometry')
-            axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='perfect position')
-            # axins.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL localization')
+            axins = zoomed_inset_axes(ax, 2, loc=1)
+            # axins.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometria')
+            # axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='odometria przefiltrowana')
+            axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='pozycja w symulatorze')
+            axins.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL')
+            axins.plot(dfs['/amcl/filtered']['x'],dfs['/amcl/filtered']['y'], label='AMCL + EKF')
             x1, x2, y1, y2 = -0.5, 0.5, -0.5, 0.5 # specify the limits
             axins.set_xlim(x1, x2) # apply the x-limits
             axins.set_ylim(y1, y2) # apply the y-limits
@@ -154,14 +154,15 @@ def main():
 
             plt.figure(2)
             plt.grid()
-            plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['x'], label='odometry')
-            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['x'], label='filtered odometry')
-            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['x'], label='perfect position')
-            # plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['x'], label='AMCL localization')
-            plt.xlabel('time [s]')
+            # plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['x'], label='odometria')
+            # plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['x'], label='odometria przefiltrowana')
+            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['x'], label='pozycja w symulatorze')
+            plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['x'], label='AMCL')
+            plt.plot(dfs['/amcl/filtered']['time'],dfs['/amcl/filtered']['x'], label='AMCL + EKF')
+            plt.xlabel('czas [s]')
             plt.ylabel('x [m]')
             plt.legend()
-            plt.title(f'x position value')
+            plt.title(f'Wartość położenia w osi x')
             plt.savefig(f'{mypath}/x.pdf', bbox_inches='tight')
 
 
@@ -169,14 +170,15 @@ def main():
 
             plt.figure(3)
             plt.grid()
-            plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['y'], label='odometry')
-            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['y'], label='filtered odometry')
-            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['y'], label='perfect position')
-            # plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['y'], label='AMCL localization')
-            plt.xlabel('time [s]')
+            # plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['y'], label='odometria')
+            # plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['y'], label='odometria przefiltrowana')
+            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['y'], label='pozycja w symulatorze')
+            plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['y'], label='AMCL')
+            plt.plot(dfs['/amcl/filtered']['time'],dfs['/amcl/filtered']['y'], label='AMCL + EKF')
+            plt.xlabel('czas [s]')
             plt.ylabel('y [m]')
             plt.legend()
-            plt.title(f'y position value')
+            plt.title(f'Wartość położenia w osi y')
             plt.savefig(f'{mypath}/y.pdf', bbox_inches='tight')
 
 
@@ -185,14 +187,15 @@ def main():
 
             plt.figure(4)
             plt.grid()
-            plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['th'], label='odometry')
-            plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['th'], label='filtered odometry')
-            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['th'], label='perfect position')
-            # plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['th'], label='AMCL localization')
-            plt.xlabel('time [s]')
-            plt.ylabel('theta [rad]')
+            # plt.plot(dfs['/odom/noisy']['time'],dfs['/odom/noisy']['th'], label='odometria')
+            # plt.plot(dfs['/odometry/filtered']['time'],dfs['/odometry/filtered']['th'], label='odometria przefiltrowana')
+            plt.plot(dfs['/omnivelma/pose']['time'],dfs['/omnivelma/pose']['th'], label='pozycja w symulatorze')
+            plt.plot(dfs['/amcl_pose']['time'],dfs['/amcl_pose']['th'], label='AMCL')
+            plt.plot(dfs['/amcl/filtered']['time'],dfs['/amcl/filtered']['th'], label='AMCL + EKF')
+            plt.xlabel('czas [s]')
+            plt.ylabel('kąt [rad]')
             plt.legend()
-            plt.title(f'theta angle value')
+            plt.title(f'Wartość orientacji')
             plt.savefig(f'{mypath}/theta.pdf', bbox_inches='tight')
 
 
@@ -201,91 +204,133 @@ def main():
             plt.figure(5)
             plt.grid()
 
-            odom_x_error = np.asarray(dfs['/error/odom']['x'])
-            odom_y_error = np.asarray(dfs['/error/odom']['y'])
-            odom_th_error = np.asarray(dfs['/error/odom']['th'])
-            odom_error = np.sqrt(np.add(np.power(odom_x_error,2),np.power(odom_y_error,2)))
+            # odom_x_error = np.asarray(dfs['/error/odom']['x'])
+            # odom_y_error = np.asarray(dfs['/error/odom']['y'])
+            # odom_th_error = np.asarray(dfs['/error/odom']['th'])
+            # odom_error = np.sqrt(np.add(np.power(odom_x_error,2),np.power(odom_y_error,2)))
 
-            MSE_odom = np.mean(np.power(odom_error,2))
-            MSE_Th_odom = np.mean(np.power(odom_th_error,2))
-            print(f'MSE odom pos: {MSE_odom} , theta: {MSE_Th_odom}')
-            plt.plot(dfs['/error/odom']['time'], odom_error, label = 'odometry error')
-
-            odom_filtered_x_error = np.asarray(dfs['/error/odom_filtered']['x'])
-            odom_filtered_y_error = np.asarray(dfs['/error/odom_filtered']['y'])
-            odom_filtered_th_error = np.asarray(dfs['/error/odom_filtered']['th'])
-            odom_filtered_error = np.sqrt(np.add(np.power(odom_filtered_x_error,2),np.power(odom_filtered_y_error,2)))
-
-            MSE_odom_filtered = np.mean(np.power(odom_filtered_error,2))
-            MSE_Th_odom_filtered = np.mean(np.power(odom_filtered_th_error,2))
-            print(f'MSE odom filtered pos: {MSE_odom_filtered} , theta: {MSE_Th_odom_filtered}')
-            plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'filtered odometry error')
+            # MSE_odom = np.mean(np.power(odom_error,2))
+            # MSE_Th_odom = np.mean(np.power(odom_th_error,2))
+            # print(f'MSE odom pos: {MSE_odom} , theta: {MSE_Th_odom}')
+            # plt.plot(dfs['/error/odom']['time'], odom_error, label = 'błąd odometrii')
 
 
-            avg_MSE_odom+=MSE_odom
-            avg_MSE_odom_filtered+=MSE_odom_filtered
-            avg_MSE_th+=MSE_Th_odom
-            avg_MSE_th_filtered+=MSE_Th_odom_filtered
-            # amcl_x_error = np.asarray(dfs['/error/amcl']['x'])
-            # amcl_y_error = np.asarray(dfs['/error/amcl']['y'])
-            # amcl_error = np.sqrt(np.add(np.power(amcl_x_error,2),np.power(amcl_y_error,2)))
-            # plt.plot(dfs['/error/amcl']['time'], amcl_error, label = 'amcl error')
 
-            plt.xlabel('time [s]')
-            plt.ylabel('error [m]')
+            # odom_filtered_x_error = np.asarray(dfs['/error/odom_filtered']['x'])
+            # odom_filtered_y_error = np.asarray(dfs['/error/odom_filtered']['y'])
+            # odom_filtered_th_error = np.asarray(dfs['/error/odom_filtered']['th'])
+            # odom_filtered_error = np.sqrt(np.add(np.power(odom_filtered_x_error,2),np.power(odom_filtered_y_error,2)))
+
+            # MSE_odom_filtered = np.mean(np.power(odom_filtered_error,2))
+            # MSE_Th_odom_filtered = np.mean(np.power(odom_filtered_th_error,2))
+            # print(f'MSE odom filtered pos: {MSE_odom_filtered:.4} , theta: {MSE_Th_odom_filtered:.4}')
+            # plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'błąd przefiltrowanej odometrii')
+
+
+            amcl_x_error = np.asarray(dfs['/error/amcl']['x'])
+            amcl_y_error = np.asarray(dfs['/error/amcl']['y'])
+            amcl_th_error = np.asarray(dfs['/error/amcl']['th'])
+            amcl_error = np.sqrt(np.add(np.power(amcl_x_error,2),np.power(amcl_y_error,2)))
+
+            MSE_AMCL = np.mean(np.power(amcl_error,2))
+            MSE_Th_AMCL = np.mean(np.power(amcl_th_error,2))
+            print(f'MSE AMCL pos: {MSE_AMCL:.4} , theta: {MSE_Th_AMCL:.4}')
+            plt.plot(dfs['/error/amcl']['time'], amcl_error, label = 'błąd lokalizacji AMCL')
+
+
+            amcl_filtered_x_error = np.asarray(dfs['/error/amcl_filtered']['x'])
+            amcl_filtered_y_error = np.asarray(dfs['/error/amcl_filtered']['y'])
+            amcl_filtered_th_error = np.asarray(dfs['/error/amcl_filtered']['th'])
+            amcl_filtered_error = np.sqrt(np.add(np.power(amcl_filtered_x_error,2),np.power(amcl_filtered_y_error,2)))
+
+            MSE_AMCL_filtered = np.mean(np.power(amcl_filtered_error,2))
+            MSE_Th_AMCL_filtered = np.mean(np.power(amcl_filtered_th_error,2))
+            print(f'MSE AMCL filtered pos: {MSE_AMCL_filtered:.4} , theta: {MSE_Th_AMCL_filtered:.4}')
+            plt.plot(dfs['/error/amcl_filtered']['time'], amcl_filtered_error, label = 'błąd lokalizacji AMCL + EKF')
+
+
+            plt.xlabel('czas [s]')
+            plt.ylabel('błąd [m]')
             plt.legend()
-            plt.title(f'absolute position error MSE: \n odometry filtered: {MSE_odom_filtered:.4} odometry: {MSE_odom:.4}') #amcl: {amcl_error[-1]:.4}')
+
+            plt.title(f'Błąd wartości położenia MSE: \n AMCL + EKF: {MSE_AMCL_filtered:.4} AMCL: {MSE_AMCL:.4}')# odometria: {MSE_odom:.4}') 
             plt.savefig(f'{mypath}/error_abs.pdf',bbox_inches='tight')
 
+            # avg_MSE_odom+=MSE_odom
+            # avg_MSE_odom_filtered+=MSE_odom_filtered
+            # avg_MSE_th+=MSE_Th_odom
+            # avg_MSE_th_filtered+=MSE_Th_odom_filtered
 
+            avg_MSE_AMCL+=MSE_AMCL
+            avg_MSE_AMCL_th+=MSE_Th_AMCL
+
+            avg_MSE_AMCL_filtered+=MSE_AMCL_filtered
+            avg_MSE_AMCL_filtered_th+=MSE_Th_AMCL_filtered
 
 
             plt.figure(6)
             fig, axs = plt.subplots(2, sharex=True, sharey=False) # 3
-            axs[0].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['x'], label = 'x')
-            axs[0].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['y'], label = 'y')
-            axs[1].plot(dfs['/error/odom']['time'],dfs['/error/odom']['x'], label = 'x')
-            axs[1].plot(dfs['/error/odom']['time'],dfs['/error/odom']['y'], label = 'y')
-            # axs[2].plot(dfs['/error/amcl']['time'],dfs['/error/amcl']['x'], label = 'x')
-            # axs[2].plot(dfs['/error/amcl']['time'],dfs['/error/amcl']['y'], label = 'y')
-            plt.xlabel('time [s]')
+            # axs[0].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['x'], label = 'x')
+            # axs[0].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['y'], label = 'y')
+            # axs[1].plot(dfs['/error/odom']['time'],dfs['/error/odom']['x'], label = 'x')
+            # axs[1].plot(dfs['/error/odom']['time'],dfs['/error/odom']['y'], label = 'y')
+            axs[0].plot(dfs['/error/amcl']['time'],dfs['/error/amcl']['x'], label = 'AMCL')
+            axs[1].plot(dfs['/error/amcl']['time'],dfs['/error/amcl']['y'], label = 'AMCL')
+            axs[0].plot(dfs['/error/amcl_filtered']['time'],dfs['/error/amcl_filtered']['x'], label = 'AMCL + EKF')
+            axs[1].plot(dfs['/error/amcl_filtered']['time'],dfs['/error/amcl_filtered']['y'], label = 'AMCL + EKF')
+            plt.xlabel('czas [s]')
 
             for ax in axs.flat:
-                ax.set(ylabel='error [m]')
+                ax.set(ylabel='błąd [m]')
                 ax.grid()
                 ax.legend()
             
-            axs[0].set_title('filtered odometry x and y error')
-            axs[1].set_title('odometry x and y error')
-            # axs[2].set_title('AMCL x and y error')
+            axs[0].set_title('Błąd x')
+            # axs[1].set_title('Błąd odometrii')
+            axs[1].set_title('Błąd y')
             plt.savefig(f'{mypath}/error.pdf',bbox_inches='tight')
 
 
 
-            plt.figure(7)
-            fig, axs = plt.subplots(2 , sharex=True, sharey=False) # 3
-            axs[0].plot(dfs['/error/odom']['time'],dfs['/error/odom']['th'])
-            axs[1].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['th'])
-            # axs[2].plot(dfs['/error/amcl']['time'],dfs['/error/amcl']['th'])
-            plt.xlabel('time [s]')
-            for ax in axs.flat:
-                ax.set(ylabel='error [rad]')
-                ax.grid()
+            plt.figure(10)
+            # fig, axs = plt.subplots(2 , sharex=True, sharey=False) # 3
+            # axs[0].plot(dfs['/error/odom']['time'],dfs['/error/odom']['th'])
+            # axs[0].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['th'])
+            plt.plot(dfs['/error/amcl']['time'],dfs['/error/amcl']['th'], label='AMCL')
+            plt.plot(dfs['/error/amcl_filtered']['time'],dfs['/error/amcl_filtered']['th'], label='AMCL + EKF')
+            plt.xlabel('czas [s]')
+            # for ax in axs.flat:
+            #     ax.set(ylabel='błąd [rad]')
+            #     ax.grid()
 
-            axs[0].set_title(f'odometry angle error MSE: {MSE_Th_odom:.4}')
-            axs[1].set_title(f'filtered odometry angle error MSE: {MSE_Th_odom_filtered:.4}')
-            # axs[2].set_title('AMCL angle error')
+            # axs[0].set_title(f'Błąd orientacji odometrii MSE: {MSE_Th_odom:.4}')
+            # axs[0].set_title(f'Błąd orientacji przefiltrowanej odometrii MSE: {MSE_Th_odom_filtered:.4}')
+            # axs[0].set_title(f'Błąd orientacji AMCL MSE: {MSE_Th_AMCL:.4}')
+            # axs[1].set_title(f'Błąd orientacji AMCL + EKF MSE: {MSE_Th_AMCL_filtered:.4}')
+
+            plt.ylabel('błąd [rad]')
+            plt.grid()
+            plt.legend()
+            plt.title(f'Wartości błędów orientacji')
 
             plt.savefig(f'{mypath}/error_theta.pdf',bbox_inches='tight')
 
             plt.close('all')
     
-    avg_MSE_odom/=5
-    avg_MSE_odom_filtered/=5
-    avg_MSE_th/=5
-    avg_MSE_th_filtered/=5
-    print('avg_MSE_odom avg_MSE_odom_filtered avg_MSE_th avg_MSE_th_filtered')
-    print(f'{avg_MSE_odom} {avg_MSE_odom_filtered} {avg_MSE_th} {avg_MSE_th_filtered}')
+    # avg_MSE_odom/=5
+    # avg_MSE_th/=5
+    # avg_MSE_odom_filtered/=5
+    # avg_MSE_th_filtered/=5
+    # print(f'avg_MSE_odom_filtered: {avg_MSE_odom_filtered:.4} avg_MSE_th_filtered: {avg_MSE_th_filtered:.4}')
+
+    avg_MSE_AMCL/=5
+    avg_MSE_AMCL_th/=5
+    print(f'avg_MSE_AMCL: {avg_MSE_AMCL:.4} avg_MSE_AMCL_th: {avg_MSE_AMCL_th:.4}')
+
+    avg_MSE_AMCL_filtered/=5
+    avg_MSE_AMCL_filtered_th/=5
+    print(f'avg_MSE_AMCL_filtered: {avg_MSE_AMCL_filtered:.4} avg_MSE_AMCL_filtered_th: {avg_MSE_AMCL_filtered_th:.4}')
+
 
 if __name__ == "__main__":
     main()

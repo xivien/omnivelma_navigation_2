@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 class SquareTest : public rclcpp::Node
 {
 public:
-    SquareTest() : Node("square_test_node"), loop_rate_(20.0f), freq_(20.0f), mode_(1), dest_x_(4.0), dest_y_(4.0)
+    SquareTest() : Node("square_test_node"), loop_rate_(20.0f), freq_(20.0f), mode_(1), dest_x_(2.5), dest_y_(2.5)
     {
         rclcpp::sleep_for(2s);
 
@@ -214,6 +214,7 @@ private:
         m.getRPY(roll, pitch, yaw_);
         pos_x_ = msg->pose.pose.position.x;
         pos_y_ = msg->pose.pose.position.y;
+        
     }
 
     void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)

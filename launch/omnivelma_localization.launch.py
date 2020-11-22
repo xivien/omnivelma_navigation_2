@@ -17,7 +17,7 @@ def generate_launch_description():
     omnivelma_dir = get_package_share_directory('omnivelma_navigation_2')
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    map_location = os.path.join(omnivelma_dir, 'maps', 'lab_updated.yaml')
+    map_location = os.path.join(omnivelma_dir, 'maps', 'slam_toolbox.yaml')
     nav_params_dir = os.path.join(omnivelma_dir, 'params', 'nav2_params.yaml')
 
     slam = LaunchConfiguration('use_slam')
