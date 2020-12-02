@@ -15,7 +15,7 @@ class MergedLaserPublisher : public rclcpp::Node
 {
 public:
     MergedLaserPublisher()
-        : Node("Laser_Scan_Merger"), min_ang_(-3.13), max_ang_(3.13), range_min_(0.06), range_max_(20.0), frame_id_("base_laser")
+        : Node("Laser_Scan_Merger"), min_ang_(-M_PI), max_ang_(M_PI), range_min_(0.06), range_max_(20.0), frame_id_("base_laser")
     {
         rclcpp::Parameter simTime("use_sim_time", rclcpp::ParameterValue(true)); // Set to false for real robot
         set_parameter(simTime);
@@ -25,7 +25,7 @@ public:
 
         publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
         timer_ = this->create_wall_timer(
-            20ms, std::bind(&MergedLaserPublisher::timer_callback, this));
+            50ms, std::bind(&MergedLaserPublisher::timer_callback, this));
         subscription_1_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/monokl_l/scan", 1, std::bind(&MergedLaserPublisher::topic_1_callback, this, std::placeholders::_1));
         subscription_2_ = this->create_subscription<sensor_msgs::msg::LaserScan>(

@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 class TurnTest : public rclcpp::Node
 {
 public:
-    TurnTest() : Node("turn_test_node"), loop_rate_(20.0f), freq_(20.0f), destination_(4.0f * M_PI)
+    TurnTest() : Node("turn_test_node"), loop_rate_(20.0f), freq_(20.0f), destination_(8.0f * M_PI)
     {
         rclcpp::sleep_for(2s);
 
@@ -95,7 +95,7 @@ private:
 
     rclcpp::Rate loop_rate_;
     float freq_;
-    float vel_ = 0.3f;
+    float vel_ = 0.5f;
     double yaw_;
     float destination_;
 

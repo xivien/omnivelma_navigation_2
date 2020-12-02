@@ -31,7 +31,6 @@ public:
 
         imu_subscriber_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "/imu/filtered", 10, std::bind(&CovPub::imu_callback, this, std::placeholders::_1));
-
     }
 
 private:
@@ -41,9 +40,9 @@ private:
         msg->pose.covariance[7] = 0.001;
         msg->pose.covariance[35] = 0.01;
 
-        msg->twist.covariance[0] = 0.0002;
-        msg->twist.covariance[7] = 0.0002;
-        msg->twist.covariance[35] = 0.001;
+        msg->twist.covariance[0] = 0.0016; // 0.0016 from odom error
+        msg->twist.covariance[7] = 0.0016;
+        msg->twist.covariance[35] = 0.01;
 
         pub_odom_->publish(*msg);
     }
@@ -51,9 +50,9 @@ private:
     void imu_callback(sensor_msgs::msg::Imu::SharedPtr msg)
     {
         msg->orientation_covariance[8] = 0.001;
-        msg->angular_velocity_covariance[8] = 1e-6;
-        msg->linear_acceleration_covariance[0] = 1e-5;
-        msg->linear_acceleration_covariance[4] = 1e-5;
+        msg->angular_velocity_covariance[8] = 1e-5;    // 0.003^2
+        msg->linear_acceleration_covariance[0] = 1e-2; // 0.1^2
+        msg->linear_acceleration_covariance[4] = 1e-2;
 
         pub_imu_->publish(*msg);
     }

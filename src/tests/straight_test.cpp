@@ -16,7 +16,7 @@ using namespace std::chrono_literals;
 class StraightTest : public rclcpp::Node
 {
 public:
-    StraightTest() : Node("straight_test_node"), loop_rate_(20.0f), freq_(20.0f), destination_(4.0f)
+    StraightTest() : Node("straight_test_node"), loop_rate_(20.0f), freq_(20.0f), destination_(5.0f)
     {
         rclcpp::sleep_for(2s);
 
@@ -34,7 +34,7 @@ private:
     void do_trajectory()
     {
         geometry_msgs::msg::Twist vel_msg;
-        vel_msg.linear.y = vel_;
+        vel_msg.linear.x = vel_;
         float last_dist = 10000.0f;
 
         rclcpp::spin_some(this->get_node_base_interface());
@@ -56,7 +56,7 @@ private:
             rclcpp::spin_some(this->get_node_base_interface());
             dist = destination_ - pos_x_;
         }
-        vel_msg.linear.y = 0.0f;
+        vel_msg.linear.x = 0.0f;
         pub_vel_->publish(vel_msg);
 
         loop_rate_.sleep();
@@ -67,8 +67,8 @@ private:
         dist = pos_x_;
 
         rclcpp::sleep_for(2s);
-        vel_msg.linear.y = -vel_;
-
+        vel_msg.linear.x = -vel_;
+        rclcpp::sleep_for(1s);
         // first few messages hardcoded so robot doesnt get stuck
         for (int i = 0; i < 10; i++)
         {
@@ -92,7 +92,7 @@ private:
     void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
         //when testing with Odometry
-        pos_x_ = msg->pose.pose.position.y;
+        pos_x_ = msg->pose.pose.position.x;
     }
 
     void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -103,7 +103,7 @@ private:
 
     rclcpp::Rate loop_rate_;
     float freq_;
-    float vel_ = 0.5f;
+    float vel_ = 0.8f;
     float pos_x_;
     float destination_;
 

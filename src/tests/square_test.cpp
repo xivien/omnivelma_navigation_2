@@ -19,7 +19,7 @@ using namespace std::chrono_literals;
 class SquareTest : public rclcpp::Node
 {
 public:
-    SquareTest() : Node("square_test_node"), loop_rate_(20.0f), freq_(20.0f), mode_(1), dest_x_(2.5), dest_y_(2.5)
+    SquareTest() : Node("square_test_node"), loop_rate_(40.0f), freq_(40.0f), mode_(1), dest_x_(2.5), dest_y_(2.5)
     {
         rclcpp::sleep_for(2s);
 
@@ -37,7 +37,7 @@ public:
         switch (mode_)
         {
         case 1:
-            do_mode_1(destination_x, destination_y,1);
+            do_mode_1(destination_x, destination_y, 1);
             do_mode_1(destination_y, destination_x, -1);
             // turn_to_starting_pose();
             break;
@@ -52,7 +52,7 @@ public:
     }
 
 private:
-    void do_mode_1(std::array<float, 4>& destination_x, std::array<float, 4>& destination_y, int dir =1)
+    void do_mode_1(std::array<float, 4> &destination_x, std::array<float, 4> &destination_y, int dir = 1)
     {
         geometry_msgs::msg::Twist vel_msg;
 
@@ -70,9 +70,13 @@ private:
 
             while (true)
             {
+                if (std::abs(direct) < 0.1f)
+                {
+                    break;
+                }
                 vel_msg.linear.x = 0.0f;
                 vel_msg.linear.y = 0.0f;
-                vel_msg.angular.z = -dir*vel_th_;
+                vel_msg.angular.z = -dir * vel_th_;
                 pub_vel_->publish(vel_msg);
                 loop_rate_.sleep();
                 rclcpp::spin_some(this->get_node_base_interface());
@@ -90,15 +94,10 @@ private:
                 {
                     direct -= 2.0f * M_PI;
                 }
-
-                if (std::abs(direct) < 0.1f && std::abs(direct) > std::abs(last_direct))
-                {
-                    break;
-                }
             }
             vel_msg.angular.z = 0.0f;
             vel_msg.linear.x = vel_;
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 10; i++)
             {
                 pub_vel_->publish(vel_msg);
                 loop_rate_.sleep();
@@ -127,7 +126,8 @@ private:
         }
     }
 
-    void turn_to_starting_pose(){
+    void turn_to_starting_pose()
+    {
         geometry_msgs::msg::Twist vel_msg;
         // Turn to starting pose
         float last_direct = 100000.0f;
@@ -165,7 +165,7 @@ private:
         loop_rate_.sleep();
         rclcpp::spin_some(this->get_node_base_interface());
     }
-    void do_mode_2(std::array<float, 4>& destination_x, std::array<float, 4>& destination_y)
+    void do_mode_2(std::array<float, 4> &destination_x, std::array<float, 4> &destination_y)
     {
         geometry_msgs::msg::Twist vel_msg;
 
@@ -214,7 +214,6 @@ private:
         m.getRPY(roll, pitch, yaw_);
         pos_x_ = msg->pose.pose.position.x;
         pos_y_ = msg->pose.pose.position.y;
-        
     }
 
     void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -236,8 +235,8 @@ private:
 
     rclcpp::Rate loop_rate_;
     float freq_;
-    float vel_ = 0.5f;
-    float vel_th_ = 0.3f;
+    float vel_ = 0.8f;
+    float vel_th_ = 0.5f;
     double yaw_, pos_x_, pos_y_;
     int mode_;
     float dest_x_, dest_y_;

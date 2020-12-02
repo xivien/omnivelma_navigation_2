@@ -14,6 +14,7 @@ plots generated:
 - theta error in time
 '''
 import matplotlib.pyplot as plt
+import statistics
 from os import listdir, walk
 from os.path import isfile, join
 import numpy as np
@@ -65,10 +66,10 @@ def main():
     dirs.sort()
     print(dirs)
 
-    avg_MSE_odom = 0
-    avg_MSE_odom_filtered = 0
-    avg_MSE_th = 0
-    avg_MSE_th_filtered = 0
+    avg_MSE_odom = []
+    avg_MSE_odom_filtered = []
+    avg_MSE_th = []
+    avg_MSE_th_filtered = []
 
     plot_number=0
     for dir in dirs:
@@ -93,7 +94,6 @@ def main():
                 msg_types.append(row[2])
                 topic_names.append(row[1])
 
-            # print(msg_types)
 
             time0 = message_data[0][2]
 
@@ -125,11 +125,11 @@ def main():
             # fig.legend()
             ax.legend(loc = 3)
             plt.grid()
-            axins = zoomed_inset_axes(ax, 3, loc=1)
+            axins = zoomed_inset_axes(ax, 15, loc=1)
             axins.plot(dfs['/odom/noisy']['x'],dfs['/odom/noisy']['y'], label='odometria')
             axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='odometria przefiltrowana')
             axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='pozycja w symulatorze')
-            x1, x2, y1, y2 = -0.5, 0.5, -0.5, 0.5 # specify the limits
+            x1, x2, y1, y2 = -0.1, 0.1, -0.1, 0.1 # specify the limits
             axins.set_xlim(x1, x2) # apply the x-limits
             axins.set_ylim(y1, y2) # apply the y-limits
             axins.grid()
@@ -208,12 +208,13 @@ def main():
             plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'błąd przefiltrowanej odometrii')
 
 
-            avg_MSE_odom+=MSE_odom
-            avg_MSE_odom_filtered+=MSE_odom_filtered
-            avg_MSE_th+=MSE_Th_odom
-            avg_MSE_th_filtered+=MSE_Th_odom_filtered
-            print(f'MSE odom pos: {MSE_odom:.4} , theta: {MSE_Th_odom:.4}')
-            print(f'MSE odom filtered pos: {MSE_odom_filtered:.4} , theta: {MSE_Th_odom_filtered:.4}')
+            avg_MSE_odom.append(MSE_odom)
+            avg_MSE_odom_filtered.append(MSE_odom_filtered)
+            avg_MSE_th.append(MSE_Th_odom)
+            avg_MSE_th_filtered.append(MSE_Th_odom_filtered)
+
+            # last_x = np.asarray(dfs['/omnivelma/pose']['x'])[-1]
+            # print(f'Last x: {odom_x_error[-1]:.4} , last y: {odom_y_error[-1]:.4} las th: {odom_th_error[-1]:.4}, path length: {last_x:.4}')
 
             plt.xlabel('czas [s]')
             plt.ylabel('błąd [m]')
@@ -231,7 +232,7 @@ def main():
             axs[0].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['x'], label = 'przefiltrowana odometria')
             axs[1].plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['y'], label = 'przefiltrowana odometria')
 
-            plt.xlabel('time [s]')
+            plt.xlabel('czas [s]')
 
             for ax in axs.flat:
                 ax.set(ylabel='błąd [m]')
@@ -246,23 +247,43 @@ def main():
 
 
             plt.figure(10)
-            plt.plot(dfs['/error/odom']['time'],dfs['/error/odom']['th'], label = 'odometria')
-            plt.plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['th'], label = 'przefiltrowana odometria')
+            plt.plot(dfs['/error/odom']['time'],dfs['/error/odom']['th'],label = 'odometria', linewidth=1)
+            plt.plot(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['th'], label = 'przefiltrowana odometria',  linewidth=1)
             plt.xlabel('time [s]')
+            plt.xlabel('błąd [rad]')
 
             plt.grid()
             plt.legend()
             plt.title(f'Błąd orientacji')
             plt.savefig(f'{mypath}/error_theta.pdf',bbox_inches='tight')
 
+
+
+            plt.figure(11)
+            plt.scatter(dfs['/error/odom']['time'],dfs['/error/odom']['th'], s =1 ,label = 'odometria')
+            plt.scatter(dfs['/error/odom_filtered']['time'],dfs['/error/odom_filtered']['th'], s=1,label = 'przefiltrowana odometria')
+            plt.xlabel('time [s]')
+            plt.xlabel('błąd [rad]')
+
+            plt.grid()
+            plt.legend()
+            plt.title(f'Błąd orientacji')
+            plt.savefig(f'{mypath}/error_theta_scatter.pdf',bbox_inches='tight')
+
             plt.close('all')
     
-    avg_MSE_odom/=plot_number
-    avg_MSE_odom_filtered/=plot_number
-    avg_MSE_th/=plot_number
-    avg_MSE_th_filtered/=plot_number
-    print('avg_MSE_odom avg_MSE_odom_filtered avg_MSE_th avg_MSE_th_filtered')
-    print(f'{avg_MSE_odom} {avg_MSE_odom_filtered} {avg_MSE_th} {avg_MSE_th_filtered}')
+    print("---Polozenie ---")
+    for i in range(len(avg_MSE_odom)):
+        print(f"{i+1} & {avg_MSE_odom[i]:.4} & {avg_MSE_odom_filtered[i]:.4} \\\ \hline")
+    
+    print(f"Średnia & {statistics.mean(avg_MSE_odom):.4} & {statistics.mean(avg_MSE_odom_filtered):.4} \\\ \hline")
+
+    print("---Orientacja ---")
+    for i in range(len(avg_MSE_odom)):
+        print(f"{i+1} & {avg_MSE_th[i]:.4} & {avg_MSE_th_filtered[i]:.4} \\\ \hline")
+    print(f"Średnia & {statistics.mean(avg_MSE_th):.4} & {statistics.mean(avg_MSE_th_filtered):.4} \\\ \hline")
+
+
 
 if __name__ == "__main__":
     main()
