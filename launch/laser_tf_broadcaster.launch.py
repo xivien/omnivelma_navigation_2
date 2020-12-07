@@ -39,13 +39,13 @@ def generate_launch_description():
         #     arguments=['0', '0.0', '0.0', '1.570796', '3.141592',
         #                '1.570796', 'camera_link_reoriented', 'camera_link'],
         #     output='screen'),
-        # Node( # base transform is changing and is published by gazebo
-        #     package='tf2_ros',
-        #     executable='static_transform_publisher',
-        #     name='omnivelma_tf_broadcaster',
-        #     arguments=['0', '0.0', '0.0', '0.0', '0.0',
-        #                '0.0', 'base_footprint', 'omnivelma'],
-        #     output='screen'),
+        Node( # base transform is changing and is published by gazebo
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='omnivelma_tf_broadcaster',
+            arguments=['0.0', '0.0', '0.0', '0.0', '0.0',
+                       '0.0', 'base_footprint', 'omnivelma'],
+            output='screen'),
     ])
     return ld
 

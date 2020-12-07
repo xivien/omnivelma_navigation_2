@@ -70,14 +70,14 @@ bt_navigator_rclcpp_node:
 controller_server:
   ros__parameters:
     use_sim_time: True
-    controller_frequency: 20.0
+    controller_frequency: 10.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001 # don't filter y velocity messages
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
-    # goal_checker_plugin: "goal_checker"
+    goal_checker_plugin: "goal_checker"
     controller_plugins: ["FollowPath"]
-    # controller_plugins: ["DynamicFollowPath"] # change also in nav_bt.xml
+    # controller_plugins: ["TEBFollowPath"] # change also in nav_bt.xml
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.5
@@ -90,18 +90,18 @@ controller_server:
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
-      min_vel_x: -0.2
+      min_vel_x: -0.3 #0.6
       min_vel_y: -0.3
-      max_vel_x: 0.58
+      max_vel_x: 0.6
       max_vel_y: 0.3
       min_speed_xy: 0.0
-      max_speed_xy: 0.5
-      acc_lim_x: 0.5
+      max_speed_xy: 0.6
+      acc_lim_x: 0.6
       acc_lim_y: 0.3
-      decel_lim_x: -0.5
+      decel_lim_x: -0.6
       decel_lim_y: -0.3
 
-      max_vel_theta: 0.3
+      max_vel_theta: 0.5
       min_speed_theta: 0.0
       acc_lim_theta: 0.5
       decel_lim_theta: -0.5
@@ -122,49 +122,54 @@ controller_server:
       critics: ["BaseObstacle", "GoalAlign", "GoalDist", "Oscillation", "PathAlign", "PathDist", "RotateToGoal", "Twirling"]
       BaseObstacle.scale: 0.02 # Scores a trajectory based on where the path passes over the costmap. To use this properly, you must use the inflation layer in costmap to expand obstacles by the robot's radius.
       PathAlign.scale: 32.0 # Scores a trajectory based on how well it is aligned to the path provided by the global planner.
-      PathAlign.forward_point_distance: 0.1
-      GoalAlign.scale: 50.0  # Scores a trajectory based on how well aligned the trajectory is with the goal pose.
-      GoalAlign.forward_point_distance: 0.1
+      PathAlign.forward_point_distance: 0.5
+      GoalAlign.scale: 24.0  # Scores a trajectory based on how well aligned the trajectory is with the goal pose.
+      GoalAlign.forward_point_distance: 0.5
       PathDist.scale: 32.0 # Scores a trajectory based on how far it ends up from the path provided by the global planner. 
-      GoalDist.scale: 50.0 # Scores a trajectory based on how close the trajectory gets the robot to the goal pose.
+      GoalDist.scale: 24.0 # Scores a trajectory based on how close the trajectory gets the robot to the goal pose.
       RotateToGoal.scale: 32.0 # Only allows the robot to rotate to the goal orientation when it is sufficiently close to the goal location
       Oscilation.scale: 1.0 #  Prevents the robot from just moving backwards and forwards.
-      Twirling.scale: 1.0 # Prevents holonomic robots from spinning as they make their way to the goal.
-    DynamicFollowPath:
+      Twirling.scale: 0.1 # Prevents holonomic robots from spinning as they make their way to the goal.
+      ObstacleFootprint.scale: 1.0 # prevent footprint in unpassable terrain
+    TEBFollowPath:
     # https://github.com/rst-tu-dortmund/teb_local_planner_tutorials/blob/melodic-devel/cfg/omnidir/teb_local_planner_params.yaml
       plugin: teb_local_planner::TebLocalPlannerROS
       footprint_model.type: "polygon"
       footprint: "[[0.38, 0.36], [0.38, -0.36], [-0.38, -0.36], [-0.38, 0.36]]" 
       # footprint_model.type: "point"
       min_obstacle_dist: 0.6 # This value must also include our robot radius, since footprint_model is set to "point".
+      include_costmap_obstacles: true
       inflation_dist: 1.5
       include_dynamic_obstacles: True
       dynamic_obstacle_inflation_dist: 1.5
 
       costmap_converter_plugin: costmap_converter::CostmapToPolygonsDBSMCCH
       costmap_converter_spin_thread: True
-      costmap_converter_rate: 5
+      costmap_converter_rate: 1
       enable_homotopy_class_planning: True
       enable_multithreading: True
       # weight_obstacle: 100.0
       optimization_verbose: False
       teb_autoresize: True
       min_samples: 3
-      max_samples: 500
-      max_global_plan_lookahead_dist: 3.0
-      visualize_hc_graph: True
-      max_vel_x: 0.5
-      max_vel_x_backwards: 0.2
+      max_samples: 20
+      max_global_plan_lookahead_dist: 2.0
+      visualize_hc_graph: false
+      max_vel_x: 0.6
+      max_vel_x_backwards: 0.3 # 0.6
       max_vel_y: 0.3
-      max_vel_theta: 0.3
-      acc_lim_x: 0.5
-      acc_lim_y: 0.3
-      acc_lim_theta: 0.5
+      max_vel_theta: 0.5
+      acc_lim_x: 2.5
+      acc_lim_y: 2.5
+      acc_lim_theta: 3.2
       min_turning_radius: 0.0 # omni-drive robot (can turn on place!)
       xy_goal_tolerance: 0.2
       yaw_goal_tolerance: 0.1
       weight_kinematics_nh: 1.0 #http://wiki.ros.org/teb_local_planner/Tutorials/Planning%20for%20holonomic%20robots
 
+costmap_converter:
+  ros__parameters:
+    use_sim_time: True
 
 controller_server_rclcpp_node:
   ros__parameters:
@@ -266,12 +271,12 @@ map_saver:
 
 planner_server:
   ros__parameters:
-    expected_planner_frequency: 20.0
+    expected_planner_frequency: 1.0
     use_sim_time: True
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.1
+      tolerance: 0.05
       use_astar: false
       allow_unknown: true
 
@@ -296,8 +301,8 @@ recoveries_server:
     transform_timeout: 0.1
     use_sim_time: true
     simulate_ahead_time: 2.0
-    max_rotational_vel: 0.3
-    min_rotational_vel: -0.3
+    max_rotational_vel: 0.5
+    min_rotational_vel: -0.5
     rotational_acc_lim: 0.5
 
 robot_state_publisher:

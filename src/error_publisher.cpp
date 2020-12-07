@@ -124,8 +124,8 @@ private:
 
     void perfect_pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
     {
-        perfect_x_ = msg->pose.position.x + 0.5f;
-        perfect_y_ = msg->pose.position.y - 2.0f;
+        perfect_x_ = msg->pose.position.x;
+        perfect_y_ = msg->pose.position.y;
         tf2::Quaternion q(
             msg->pose.orientation.x,
             msg->pose.orientation.y,

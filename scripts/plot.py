@@ -61,7 +61,7 @@ def get_pose(msg_types, topic_names, message, msg_type_id):
 
 
 def main():
-    path = '../bags/AMCL_EKF'
+    path = '../bags/AMCL_FULL_TEST'
     dirs = next(walk(path))[1]
     dirs.sort()
     print(dirs)
@@ -115,8 +115,8 @@ def main():
                 dfs[topic_names[id]]['time'].append((row[2] - time0)/1e9)
 
 
-            dfs['/omnivelma/pose']['x'] = list(np.asarray(dfs['/omnivelma/pose']['x']) + 0.5)
-            dfs['/omnivelma/pose']['y'] = list(np.asarray(dfs['/omnivelma/pose']['y']) - 2.0)
+            # dfs['/omnivelma/pose']['x'] = list(np.asarray(dfs['/omnivelma/pose']['x']) + 0.5)
+            # dfs['/omnivelma/pose']['y'] = list(np.asarray(dfs['/omnivelma/pose']['y']) - 2.0)
 
             fig, ax = plt.subplots()
             plt.title(f'Trajektoria')
@@ -129,19 +129,19 @@ def main():
             # fig.legend()
             ax.legend(loc = 3)
             plt.grid()
-            axins = zoomed_inset_axes(ax, 2, loc=1)
-            axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='pozycja w symulatorze')
-            axins.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL')
-            # axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='odometria przefiltrowana')
-            axins.plot(dfs['/amcl/filtered']['x'],dfs['/amcl/filtered']['y'], label='AMCL + EKF')
-            x1, x2, y1, y2 = -0.5, 0.5, -0.5, 0.5 # specify the limits
-            axins.set_xlim(x1, x2) # apply the x-limits
-            axins.set_ylim(y1, y2) # apply the y-limits
-            axins.grid()
+            # axins = zoomed_inset_axes(ax, 2, loc=1)
+            # axins.plot(dfs['/omnivelma/pose']['x'],dfs['/omnivelma/pose']['y'], label='pozycja w symulatorze')
+            # axins.plot(dfs['/amcl_pose']['x'],dfs['/amcl_pose']['y'], label='AMCL')
+            # # axins.plot(dfs['/odometry/filtered']['x'],dfs['/odometry/filtered']['y'], label='odometria przefiltrowana')
+            # axins.plot(dfs['/amcl/filtered']['x'],dfs['/amcl/filtered']['y'], label='AMCL + EKF')
+            # x1, x2, y1, y2 = -0.5, 0.5, -0.5, 0.5 # specify the limits
+            # axins.set_xlim(x1, x2) # apply the x-limits
+            # axins.set_ylim(y1, y2) # apply the y-limits
+            # axins.grid()
 
             plt.yticks(visible=True)
             plt.xticks(visible=True)
-            mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+            # mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
             plt.savefig(f'{mypath}/trajectory.pdf', bbox_inches='tight')
 
 
@@ -212,7 +212,7 @@ def main():
             
             MSE_odom_filtered = np.mean(np.power(odom_filtered_error,2))
             MSE_Th_odom_filtered = np.mean(np.power(odom_filtered_th_error,2))
-            # plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'błąd przefiltrowanej odometrii')
+            plt.plot(dfs['/error/odom_filtered']['time'], odom_filtered_error, label = 'błąd przefiltrowanej odometrii')
 
 
             amcl_filtered_x_error = np.asarray(dfs['/error/amcl_filtered']['x'])
