@@ -41,7 +41,7 @@ def generate_launch_description():
 
     use_sim_time = launch.actions.DeclareLaunchArgument(
         name='use_sim_time',
-        default_value= 'true',
+        default_value= 'false',
         description='Use simulation (Gazebo) clock if true'
     )
 
@@ -60,6 +60,7 @@ def generate_launch_description():
             'default_bt_xml_filename': launch.substitutions.LaunchConfiguration('bt_file'),
             'use_sim_time': launch.substitutions.LaunchConfiguration('use_sim_time'),
             'autostart': launch.substitutions.LaunchConfiguration('autostart'),
+            'use_lifecycle_mgr': 'false',
             'map_subscribe_transient_local': launch.substitutions.LaunchConfiguration('map_subscribe_transient_local'),
         }.items(),
     )

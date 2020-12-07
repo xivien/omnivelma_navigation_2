@@ -80,7 +80,7 @@ def generate_launch_description():
 
     ld.add_action(rviz_cmd)
     ld.add_action(laserscan_merger_cmd)
-    ld.add_action(error_pub_cmd)
+    # ld.add_action(error_pub_cmd)
     ld.add_action(cov_pub_cmd)
     ld.add_action(tf_broadcaster_cmd)
 

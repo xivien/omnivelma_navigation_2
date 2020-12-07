@@ -10,7 +10,7 @@ ekf_map_node:
         odom_frame: odom            # Defaults to "odom" if unspecified
         base_link_frame: base_footprint  # Defaults to "base_link" if unspecified
         world_frame: map           # Defaults to the value of odom_frame if unspecified
-        transform_time_offset: 0.1
+        transform_time_offset: 0.5
         odom0: /odom/noisy/cov
         odom0_config: [false,  false,  false, 
                        false, false, false,

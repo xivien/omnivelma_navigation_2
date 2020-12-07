@@ -71,7 +71,7 @@ private:
     void feedback_callback(GoalHandle::SharedPtr, const std::shared_ptr<const FollowWaypointsAction::Feedback> feedback)
     {
         feedback_it_++;
-        if (feedback_it_ % 10 == 0)
+        if (feedback_it_ % 100 == 0)
         {
             RCLCPP_INFO(this->get_logger(), "Current waypoint: %d", feedback->current_waypoint);
             feedback_it_ = 0;
