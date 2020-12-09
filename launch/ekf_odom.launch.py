@@ -22,5 +22,6 @@ def generate_launch_description():
             name='ekf_odom_node',
             output='screen',
             parameters=[ekf_odom_params],
+            remappings=[('/odometry/filtered','/odom')],
         ),
     ])

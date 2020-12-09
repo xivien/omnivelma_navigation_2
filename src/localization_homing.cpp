@@ -33,7 +33,7 @@ public:
     amcl_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
         "/amcl_pose", 1, std::bind(&LocalizationHoming::pose_callback, this, std::placeholders::_1));
     odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/odometry/filtered", 10, std::bind(&LocalizationHoming::odom_callback, this, std::placeholders::_1));
+        "/odom", 10, std::bind(&LocalizationHoming::odom_callback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "MAKE SURE THAT ROBOT HAS AN EMPTY 1mX1m AREA IN FRONT OF IT");
     RCLCPP_INFO(this->get_logger(), "Select mode: \n"
                                     "0 - reset localization and do homing sequence \n"
@@ -154,14 +154,20 @@ private:
     init_pose.header.frame_id = "map";
     init_pose.pose.pose.orientation.w = 1;
     RCLCPP_INFO(this->get_logger(), "Enter X[m] Y[m] Theta[rad]");
-    std::cin >> init_pose.pose.pose.position.x >> init_pose.pose.pose.position.y >> init_pose.pose.pose.orientation.z;
-
+    tf2::Quaternion myQuaternion;
+    double yaw;
+    std::cin >> init_pose.pose.pose.position.x >> init_pose.pose.pose.position.y >> yaw;
+    myQuaternion.setRPY( 0.0f, 0.0f, yaw );
+    init_pose.pose.pose.orientation.x = myQuaternion.x();
+    init_pose.pose.pose.orientation.y = myQuaternion.y();
+    init_pose.pose.pose.orientation.z = myQuaternion.z();
+    init_pose.pose.pose.orientation.w = myQuaternion.w();
     // init covariances
     init_pose.pose.covariance[0] = 10.0;
     init_pose.pose.covariance[7] = 10.0;
     init_pose.pose.covariance[14] = 3.0;
     RCLCPP_INFO(this->get_logger(), "Setting pose to x=%.2f y=%.2f theta=%.2f", init_pose.pose.pose.position.x,
-                init_pose.pose.pose.position.y, init_pose.pose.pose.orientation.z);
+                init_pose.pose.pose.position.y, yaw);
 
     pub_init_pose_->publish(init_pose);
     rclcpp::spin_some(this->get_node_base_interface());

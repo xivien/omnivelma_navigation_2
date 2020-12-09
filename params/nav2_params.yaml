@@ -37,7 +37,6 @@ bt_navigator:
     use_sim_time: True
     global_frame: map
     robot_base_frame: base_footprint
-    odom_topic: /odometry/filtered
     default_bt_xml_filename: "nav_bt.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
@@ -106,7 +105,7 @@ controller_server:
       acc_lim_theta: 0.5
       decel_lim_theta: -0.5
 
-      vx_samples: 15
+      vx_samples: 20
       vy_samples: 15
       vtheta_samples: 15
 
@@ -191,7 +190,7 @@ local_costmap:
       height: 5
       resolution: 0.05
       footprint: "[[0.45, 0.43], [0.45, -0.43], [-0.45, -0.43], [-0.45, 0.43]]"
-      footprint_padding: 0.03
+      footprint_padding: 0.05
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -228,7 +227,7 @@ global_costmap:
       robot_base_frame: base_footprint
       use_sim_time: True
       footprint: "[[0.45, 0.43], [0.45, -0.43], [-0.45, -0.43], [-0.45, 0.43]]"
-      footprint_padding: 0.03
+      footprint_padding: 0.05
       resolution: 0.05
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"] # obstacle layer to add changes to a map
       obstacle_layer:

@@ -29,7 +29,7 @@ public:
         pub_err_amcl_filtered_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/error/amcl_filtered", 10);
 
         filtered_odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odometry/filtered", 10, std::bind(&ErrorPub::odom_filtered_callback, this, std::placeholders::_1));
+            "/odom", 10, std::bind(&ErrorPub::odom_filtered_callback, this, std::placeholders::_1));
         odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
             "/odom/noisy", 10, std::bind(&ErrorPub::odom_callback, this, std::placeholders::_1));
 
