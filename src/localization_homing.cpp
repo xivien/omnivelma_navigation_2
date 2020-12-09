@@ -37,8 +37,7 @@ public:
     RCLCPP_INFO(this->get_logger(), "MAKE SURE THAT ROBOT HAS AN EMPTY 1mX1m AREA IN FRONT OF IT");
     RCLCPP_INFO(this->get_logger(), "Select mode: \n"
                                     "0 - reset localization and do homing sequence \n"
-                                    "1 - set manual localization and do homing sequence \n"
-                                    "2 - no homing sequence start with localization 0.0 \n");
+                                    "1 - set manual localization and do homing sequence \n");
 
     std::cin >> mode_;
     switch (mode_)
@@ -64,7 +63,8 @@ public:
 private:
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
   {
-    if(first_callback_){
+    if (first_callback_)
+    {
       first_callback_ = false;
       start_pos_x_ = msg->pose.pose.position.x;
       start_pos_y_ = msg->pose.pose.position.y;
@@ -91,7 +91,7 @@ private:
   void clear_costmap()
   {
     auto request = std::make_shared<nav2_msgs::srv::ClearCostmapAroundRobot::Request>();
-
+    int counter = 0;
     while (!clear_costmap_client_->wait_for_service(1s))
     {
       if (!rclcpp::ok())
@@ -100,6 +100,11 @@ private:
         return;
       }
       RCLCPP_INFO(this->get_logger(), "service not available, waiting again...");
+      counter++;
+      if (counter > 5){
+        RCLCPP_INFO(this->get_logger(), "service not available, ending wait...");
+        break;
+      }
     }
     auto result = clear_costmap_client_->async_send_request(request);
 
@@ -107,7 +112,7 @@ private:
     if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) ==
         rclcpp::FutureReturnCode::SUCCESS)
     {
-      // RCLCPP_INFO(this->get_logger(), "Succeeded calling service clear cost map");
+      RCLCPP_INFO(this->get_logger(), "Succeeded calling service clear cost map");
     }
     else
     {
@@ -135,11 +140,11 @@ private:
     if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) ==
         rclcpp::FutureReturnCode::SUCCESS)
     {
-      RCLCPP_INFO(this->get_logger(), "Succeeded calling service clear cost map");
+      RCLCPP_INFO(this->get_logger(), "Succeeded calling service");
     }
     else
     {
-      RCLCPP_ERROR(this->get_logger(), "Failed to call service clear cost map");
+      RCLCPP_ERROR(this->get_logger(), "Failed to call service");
     }
   }
 
@@ -152,9 +157,9 @@ private:
     std::cin >> init_pose.pose.pose.position.x >> init_pose.pose.pose.position.y >> init_pose.pose.pose.orientation.z;
 
     // init covariances
-    init_pose.pose.covariance[0] = 0.25;
-    init_pose.pose.covariance[7] = 0.25;
-    init_pose.pose.covariance[14] = 0.625;
+    init_pose.pose.covariance[0] = 10.0;
+    init_pose.pose.covariance[7] = 10.0;
+    init_pose.pose.covariance[14] = 3.0;
     RCLCPP_INFO(this->get_logger(), "Setting pose to x=%.2f y=%.2f theta=%.2f", init_pose.pose.pose.position.x,
                 init_pose.pose.pose.position.y, init_pose.pose.pose.orientation.z);
 
@@ -164,8 +169,8 @@ private:
 
   void do_square()
   {
-    std::array<float, 4> destination_x = {2.0f + start_pos_x_, 2.0f + start_pos_x_, 0.0f +start_pos_x_, 0.0f + start_pos_x_};
-    std::array<float, 4> destination_y = {0.0f +start_pos_y_, -2.0f +start_pos_y_ , -2.0f + start_pos_y_, 0.0f + start_pos_y_};
+    std::array<float, 4> destination_x = {2.0f + start_pos_x_, 2.0f + start_pos_x_, 0.0f + start_pos_x_, 0.0f + start_pos_x_};
+    std::array<float, 4> destination_y = {0.0f + start_pos_y_, -2.0f + start_pos_y_, -2.0f + start_pos_y_, 0.0f + start_pos_y_};
     geometry_msgs::msg::Twist vel_msg;
 
     for (size_t i = 0; i < 4; i++)
@@ -242,6 +247,10 @@ private:
     float direct = -yaw_;
     while (true)
     {
+      if (std::abs(direct) < 0.1f && std::abs(direct) > std::abs(last_direct))
+      {
+        break;
+      }
       vel_msg.linear.x = 0.0f;
       vel_msg.linear.y = 0.0f;
       vel_msg.angular.z = -vel_;
@@ -262,11 +271,6 @@ private:
       {
         direct -= 2.0f * M_PI;
       }
-
-      if (std::abs(direct) < 0.1f && std::abs(direct) > std::abs(last_direct))
-      {
-        break;
-      }
     }
     vel_msg.angular.z = 0.0f;
     pub_vel_->publish(vel_msg);
@@ -280,7 +284,7 @@ private:
     rclcpp::spin_some(this->get_node_base_interface());
     if (cov_x_ > cov_tol_ || cov_y_ > cov_tol_)
     {
-      RCLCPP_INFO(this->get_logger(), "High covariance, doing a square 1x1m");
+      RCLCPP_INFO(this->get_logger(), "High covariance, doing a square 2x2m");
       do_square();
       clear_costmap();
       loop_rate_.sleep();

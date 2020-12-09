@@ -84,13 +84,13 @@ controller_server:
       movement_time_allowance: 10.0
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.2
-      yaw_goal_tolerance: 0.2
+      xy_goal_tolerance: 0.1
+      yaw_goal_tolerance: 0.1
       stateful: True
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
-      min_vel_x: -0.3 #0.6
+      min_vel_x: -0.3
       min_vel_y: -0.3
       max_vel_x: 0.6
       max_vel_y: 0.3
@@ -106,20 +106,20 @@ controller_server:
       acc_lim_theta: 0.5
       decel_lim_theta: -0.5
 
-      vx_samples: 10
-      vy_samples: 10
-      vtheta_samples: 10
+      vx_samples: 15
+      vy_samples: 15
+      vtheta_samples: 15
 
       sim_time: 2.0
       transform_tolerance: 0.2
-      xy_goal_tolerance: 0.2
-      yaw_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.1
+      yaw_goal_tolerance: 0.1
       stateful: True
 
-      trans_stopped_velocity: 0.1  
-      rot_stopped_velocity: 0.05  
+      trans_stopped_velocity: 0.2  
+      rot_stopped_velocity: 0.2  
       
-      critics: ["BaseObstacle", "GoalAlign", "GoalDist", "Oscillation", "PathAlign", "PathDist", "RotateToGoal", "Twirling"]
+      critics: ["BaseObstacle", "GoalAlign", "GoalDist", "Oscillation", "PathAlign", "PathDist", "RotateToGoal", "Twirling", "ObstacleFootprint"]
       BaseObstacle.scale: 0.02 # Scores a trajectory based on where the path passes over the costmap. To use this properly, you must use the inflation layer in costmap to expand obstacles by the robot's radius.
       PathAlign.scale: 32.0 # Scores a trajectory based on how well it is aligned to the path provided by the global planner.
       PathAlign.forward_point_distance: 0.5
@@ -130,14 +130,16 @@ controller_server:
       RotateToGoal.scale: 32.0 # Only allows the robot to rotate to the goal orientation when it is sufficiently close to the goal location
       Oscilation.scale: 1.0 #  Prevents the robot from just moving backwards and forwards.
       Twirling.scale: 0.1 # Prevents holonomic robots from spinning as they make their way to the goal.
-      ObstacleFootprint.scale: 1.0 # prevent footprint in unpassable terrain
+      ObstacleFootprint.scale: 0.0 # prevent footprint in unpassable terrain
     TEBFollowPath:
     # https://github.com/rst-tu-dortmund/teb_local_planner_tutorials/blob/melodic-devel/cfg/omnidir/teb_local_planner_params.yaml
       plugin: teb_local_planner::TebLocalPlannerROS
       footprint_model.type: "polygon"
-      footprint: "[[0.38, 0.36], [0.38, -0.36], [-0.38, -0.36], [-0.38, 0.36]]" 
+      footprint_model.vertices: "[ [0.45, 0.43], [0.45, -0.43], [-0.45, -0.43], [-0.45, 0.43] ]"
+      min_obstacle_dist: 0.2
       # footprint_model.type: "point"
-      min_obstacle_dist: 0.6 # This value must also include our robot radius, since footprint_model is set to "point".
+      # min_obstacle_dist: 0.65
+
       include_costmap_obstacles: true
       inflation_dist: 1.5
       include_dynamic_obstacles: True
@@ -152,20 +154,21 @@ controller_server:
       optimization_verbose: False
       teb_autoresize: True
       min_samples: 3
-      max_samples: 20
-      max_global_plan_lookahead_dist: 2.0
+      max_samples: 100
+      max_global_plan_lookahead_dist: 3.0
       visualize_hc_graph: false
       max_vel_x: 0.6
-      max_vel_x_backwards: 0.3 # 0.6
+      max_vel_x_backwards: 0.3
       max_vel_y: 0.3
       max_vel_theta: 0.5
       acc_lim_x: 2.5
       acc_lim_y: 2.5
       acc_lim_theta: 3.2
       min_turning_radius: 0.0 # omni-drive robot (can turn on place!)
-      xy_goal_tolerance: 0.2
+      xy_goal_tolerance: 0.1
       yaw_goal_tolerance: 0.1
       weight_kinematics_nh: 1.0 #http://wiki.ros.org/teb_local_planner/Tutorials/Planning%20for%20holonomic%20robots
+      allow_init_with_backwards_motion: true
 
 costmap_converter:
   ros__parameters:
@@ -187,8 +190,8 @@ local_costmap:
       width: 5
       height: 5
       resolution: 0.05
-      footprint: "[[0.38, 0.36], [0.38, -0.36], [-0.38, -0.36], [-0.38, 0.36]]" 
-      footprint_padding: 0.1
+      footprint: "[[0.45, 0.43], [0.45, -0.43], [-0.45, -0.43], [-0.45, 0.43]]"
+      footprint_padding: 0.03
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -203,7 +206,7 @@ local_costmap:
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          obstacle_range: 4.0
+          obstacle_range: 5.0
           raytrace_range: 5.0
           clearing: True
           marking: True
@@ -224,8 +227,8 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: True
-      footprint: "[[0.38, 0.36], [0.38, -0.36], [-0.38, -0.36], [-0.38, 0.36]]" 
-      footprint_padding: 0.1
+      footprint: "[[0.45, 0.43], [0.45, -0.43], [-0.45, -0.43], [-0.45, 0.43]]"
+      footprint_padding: 0.03
       resolution: 0.05
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"] # obstacle layer to add changes to a map
       obstacle_layer:
@@ -236,7 +239,7 @@ global_costmap:
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          obstacle_range: 4.0
+          obstacle_range: 5.0
           raytrace_range: 5.0
           marking: True
           clearing: True
@@ -289,11 +292,9 @@ recoveries_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    recovery_plugins: ["spin", "backup", "wait"]
+    recovery_plugins: ["spin", "wait"]
     spin:
       plugin: "nav2_recoveries/Spin"
-    backup:
-      plugin: "nav2_recoveries/BackUp"
     wait:
       plugin: "nav2_recoveries/Wait"
     global_frame: odom
@@ -313,8 +314,3 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false
-    waypoint_task_executor_plugin: "waypoint_task_executor"   
-    waypoint_task_executor:
-      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
-      enabled: True
-      waypoint_pause_duration: 5.0

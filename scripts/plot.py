@@ -61,7 +61,7 @@ def get_pose(msg_types, topic_names, message, msg_type_id):
 
 
 def main():
-    path = '../bags/AMCL_FULL_TEST'
+    path = '../bags/TEB'
     dirs = next(walk(path))[1]
     dirs.sort()
     print(dirs)
