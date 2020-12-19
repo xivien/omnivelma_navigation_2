@@ -56,7 +56,7 @@ def generate_launch_description():
     tf_broadcaster_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                omnivelma_dir, 'launch/laser_tf_broadcaster.launch.py')
+                omnivelma_dir, 'launch/tf_broadcaster.launch.py')
         ),
     )
 

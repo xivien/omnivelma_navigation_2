@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /LocalCostmap1
+        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Odometry1
@@ -115,6 +116,8 @@ Visualization Manager:
           Value: true
         base_laser:
           Value: false
+        camera_link:
+          Value: false
         camera_link_reoriented:
           Value: false
         map:
@@ -140,7 +143,8 @@ Visualization Manager:
                 base_laser:
                   {}
                 camera_link_reoriented:
-                  {}
+                  camera_link:
+                    {}
                 monokl_l_heart:
                   {}
                 monokl_r_heart:
